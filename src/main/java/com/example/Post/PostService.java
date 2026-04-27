@@ -1,12 +1,7 @@
 package com.example.Post;
 
-import com.example.PostArchive.PostArchive;
-import com.example.PostArchive.PostArchiveRepository;
-import com.example.PostArchive.Reason;
 import com.example.user.User;
-import com.example.user.UserController;
 import com.example.user.UserRepository;
-import com.example.user.UserService;
 import jakarta.transaction.Transactional;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.stereotype.Service;
@@ -19,12 +14,10 @@ import java.util.NoSuchElementException;
 public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final PostArchiveRepository postArchiveRepository;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostArchiveRepository postArchiveRepository) {
+    public PostService(PostRepository postRepository, UserRepository userRepository) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
-        this.postArchiveRepository = postArchiveRepository;
     }
     public User getUserById(Integer id){
         return userRepository.findById(id).orElseThrow(
@@ -42,9 +35,23 @@ public class PostService {
         return post;
     }
 
-    public List<Post> getPosts() {
+    public PostResponse createPostResponse(Post post){
+        return new PostResponse(
+                post.getId(),
+                post.getProductName(),
+                post.getDescription(),
+                post.getPrice(),
+                post.getPicUrl(),
+                post.getUser().getId(),
+                post.getStatus(),
+                post.getCreatedAt());
+    }
 
-        return postRepository.findAll();
+    public List<PostResponse> getPosts() {
+
+        return postRepository.findAll().stream()
+                .map(this::createPostResponse)
+                .toList();
     }
 
     public Post getPostById(Integer id) {
@@ -53,6 +60,12 @@ public class PostService {
         );
 
     }
+
+    public PostResponse getPostResponseById(Integer id){
+        return createPostResponse(getPostById(id));
+    }
+
+
     @Transactional
     public void insertPost(PostRequest postRequest) {
         Post post = createPost(postRequest);
@@ -84,13 +97,8 @@ public class PostService {
         post.setDescription(description);
     }
     @Transactional
-    public void markAsSold(Integer id,Integer userId) {
+    public void markAsSold(Integer id) {
         Post post = getPostById(id);
-        User user = getUserById(id);
-
-        PostArchive postArchive = new PostArchive(post, Reason.SOLD,userId,user.getUsername());
-        postRepository.deleteById(id);
-        postArchiveRepository.save(postArchive);
-
+        post.setStatus(PostStatus.SOLD);
     }
 }

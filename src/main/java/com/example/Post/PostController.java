@@ -1,15 +1,10 @@
 package com.example.Post;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.hibernate.validator.constraints.URL;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("api/v1/posts")
@@ -21,14 +16,14 @@ public class PostController {
     }
 
     @GetMapping
-    public List<Post> getLists(){
+    public List<PostResponse> getLists(){
 
         return postService.getPosts();
     }
     @GetMapping("{id}")
-    public Post getPostById(@PathVariable Integer id){
+    public PostResponse getPostById(@PathVariable Integer id){
 
-        return postService.getPostById(id);
+        return postService.getPostResponseById(id);
     }
 
     @PostMapping
@@ -66,8 +61,8 @@ public class PostController {
 
 
     @PutMapping("{id}/SOLD")
-    public void markAsSold(@PathVariable Integer id, @RequestParam Integer userId){
-        postService.markAsSold(id,userId);
+    public void markAsSold(@PathVariable Integer id){
+        postService.markAsSold(id);
     }
 
 
