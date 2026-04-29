@@ -4,15 +4,16 @@ GET http://localhost:8080
 ###
 
 ### GET request to example server
-GET http://localhost:8080/api/v1/users/1/posts
+GET http://localhost:8080/api/v1/posts/2
 
 ###
 ###
-POST http://localhost:8080/api/v1/users/1/posts
+PATCH http://localhost:8080/api/v1/posts/4
 Content-Type: application/json
 
 {
-  "productName": "hi"
+  "price": -2,
+  "status": "fasfd"
 }
 ###
 POST http://localhost:8080/api/v1/posts
@@ -20,8 +21,8 @@ Content-Type: application/json
 
 {
   "productName" : "Ghost",
-  "price" : 180,
-  "picUrl" : "www",
+  "price" : 5,
+  "picUrl" : "https://example.com",
   "userId" : 1,
   "description": "Brand new"
 }

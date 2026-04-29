@@ -13,10 +13,6 @@ services:
     networks:
       - db
     restart: unless-stopped
-  mongo:
-    image: mongo
-    ports:
-      - 27017:27017
 
 networks:
   db:

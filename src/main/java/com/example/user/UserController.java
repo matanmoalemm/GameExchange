@@ -1,8 +1,8 @@
 package com.example.user;
 
 
-import com.example.Post.Post;
-import jakarta.validation.constraints.Email;
+import com.example.Post.PostResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,43 +17,45 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getUsers(){
-
+    @ResponseStatus(HttpStatus.FOUND)
+    public List<UserResponse> getUsers(){
         return userService.getUsers();
     }
 
     @GetMapping("{id}")
-    public User getUserById(
+    @ResponseStatus(HttpStatus.FOUND)
+    public UserResponse getUserById(
             @PathVariable Integer id){
-        return userService.getUserById(id);
+        return userService.getUserResponseById(id);
     }
 
     @GetMapping("{id}/posts")
-    public List<Post> getUserPostsById(
+    @ResponseStatus(HttpStatus.FOUND)
+    public List<PostResponse> getUserPostsById(
             @PathVariable Integer id){
         return userService.getUserPostsById(id);
     }
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public void addNewUser(
-            @RequestBody User user
+            @RequestBody UserRequest user
     ){
         userService.insertUser(user);
     }
+
     @DeleteMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUser(
             @PathVariable Integer id){
         userService.deleteUserById(id);
+
     }
 
-    @PutMapping("{id}/username")
-    public void updateUsername(
-            @PathVariable Integer id, @RequestParam String username){
-        userService.updateUsernameById(id,username);
-    }
-    @PutMapping("{id}/email")
-    public void updateUserEmail(
-            @PathVariable Integer id, @RequestParam @Email String email){
-        userService.updateUserEmailById(id,email);
+    @PatchMapping("{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateUserFromDto(
+            @PathVariable Integer id, @RequestParam UserUpdateDTO dto){
+        userService.updateUserFromDto(id,dto);
     }
 
 

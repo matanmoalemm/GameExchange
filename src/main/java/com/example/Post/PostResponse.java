@@ -1,6 +1,5 @@
 package com.example.Post;
 
-
 public record PostResponse(
         Integer id,
         String productName,
@@ -8,7 +7,7 @@ public record PostResponse(
         Integer price,
         String picUrl,
         Integer userId,
-        PostStatus status,
+        String status,
         java.time.LocalDateTime createdAt
 ) {
 }
