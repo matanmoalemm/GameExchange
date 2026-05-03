@@ -1,5 +1,6 @@
 package com.example.Post;
 
+import com.example.user.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

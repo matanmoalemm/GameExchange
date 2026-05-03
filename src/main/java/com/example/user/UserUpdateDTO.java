@@ -9,7 +9,6 @@ public record UserUpdateDTO(
         @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
         @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "Username can only contain letters, numbers, dots, and underscores")
         String username,
-        @NotBlank(message = "Email is required")
         @Email(message = "Please provide a valid email address")
         String email) {
 }

@@ -1,22 +1,37 @@
 services:
   db:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:17
     environment:
-      POSTGRES_USER: amigoscode
+      POSTGRES_USER: matan
       POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
+      POSTGRES_DB: mydata
     volumes:
-      - db:/data/postgres
+      - db-data:/var/lib/postgresql
     ports:
       - "5332:5432"
     networks:
-      - db
+      - app-network
     restart: unless-stopped
 
+  app:
+    build: .
+    container_name: game-exchange-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydata
+      - SPRING_DATASOURCE_USERNAME=matan
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - db
+    networks:
+      - app-network
+
 networks:
-  db:
+  app-network:
     driver: bridge
 
 volumes:
-  db:
+  db-data:

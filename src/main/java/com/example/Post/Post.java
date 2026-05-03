@@ -15,6 +15,8 @@ import java.util.Objects;
 @AllArgsConstructor
 @Entity
 @Table(name = "posts")
+@Getter
+@Setter
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

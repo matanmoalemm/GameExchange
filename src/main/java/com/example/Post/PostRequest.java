@@ -3,7 +3,6 @@ package com.example.Post;
 import jakarta.validation.constraints.*;
 
 public record PostRequest(
-        @NotBlank(message = "Product name cannot be empty")
         @Size(min = 3, max = 100, message = "Product name must be between 3 and 100 characters")
         String productName,
 
