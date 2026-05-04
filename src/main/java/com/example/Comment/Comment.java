@@ -22,7 +22,7 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User user; // מי כתב את התגובה
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

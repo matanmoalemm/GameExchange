@@ -2,7 +2,6 @@ package com.example.user;
 
 
 import com.example.Post.PostResponse;
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +38,7 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void addNewUser(
-            @Valid @RequestBody UserRequest user
+            @RequestBody UserRequest user
     ){
         userService.insertUser(user);
     }
@@ -55,7 +54,7 @@ public class UserController {
     @PatchMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateUserFromDto(
-            @PathVariable Integer id, @Valid @RequestBody UserUpdateDTO dto){
+            @PathVariable Integer id, @RequestParam UserUpdateDTO dto){
         userService.updateUserFromDto(id,dto);
     }
 

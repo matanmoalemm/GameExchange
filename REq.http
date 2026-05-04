@@ -4,7 +4,7 @@ GET http://localhost:8080
 ###
 
 ### GET request to example server
-GET http://localhost:8080/api/v1/users
+GET http://localhost:8080/api/v1/posts/2
 
 ###
 ###
@@ -27,18 +27,5 @@ Content-Type: application/json
   "description": "Brand new"
 }
 ###
-POST http://localhost:8080/api/v1/users
-Content-Type: application/json
+GET localhost:8080/actuator/metrics/http.server.requests
 
-{
-  "username" : "Ghii",
-  "email" : "hi@example.com"
-}
-
-###
-PATCH http://localhost:8080/api/v1/users/36
-Content-Type: application/json
-
-{
- "username" : "hiii"
-}

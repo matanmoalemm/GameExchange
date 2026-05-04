@@ -23,9 +23,11 @@ public class User {
     private Integer id;
     @Column(nullable = false)
     private String username;
+    @Email
     private String email;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true) // one user can hold many posts, when user is deleted all its posts is deleted as well(cascade), if we remove a post from the list it is deleted from the DB as well (orphanRemoval)
+    @JsonIgnore
     private List<Post> posts = new ArrayList<>();
 
     @Override
