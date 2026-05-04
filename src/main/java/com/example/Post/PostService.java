@@ -20,6 +20,8 @@ public class PostService {
         this.userRepository = userRepository;
         this.postMapper = postMapper;
     }
+
+
     public User getUserById(Integer id){
         return userRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("User id : " + id + "was not found")
@@ -48,8 +50,11 @@ public class PostService {
     @Transactional
     public void insertPost(PostRequest postRequest) {
         Post post = postMapper.toEntity(postRequest);
+        post.setUser(getUserById(postRequest.userId()));
         postRepository.save(post);
     }
+
+
     @Transactional
     public void deletePostById(Integer id) {
         postRepository.deleteById(id);
