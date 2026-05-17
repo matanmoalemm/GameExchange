@@ -1,5 +1,6 @@
 package com.example.Post;
 
+import com.example.Security.UserPrincipal;
 import com.example.user.User;
 import com.example.user.UserRepository;
 import org.junit.jupiter.api.Nested;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,14 +43,14 @@ class PostServiceTest {
         @Test
         void shouldReturnUser_WhenUserExists() {
             User user = new User();
-            user.setId(1);
+            user.setId(1L);
 
-            when(userRepository.findById(1)).thenReturn(Optional.of(user));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-            User result = postService.getUserById(1);
+            User result = postService.getUserById(1L);
 
             assertSame(user, result);
-            verify(userRepository).findById(1);
+            verify(userRepository).findById(1L);
         }
 
         @Test
@@ -69,32 +71,54 @@ class PostServiceTest {
         }
 
         @Test
-        void shouldUpdatePost_WhenPostExists() {
+        void shouldUpdatePost_WhenOwner() {
+            User owner = new User();
+            owner.setId(1L);
             Post post = new Post();
-            when(postRepository.findById(1)).thenReturn(Optional.of(post));
+            post.setUser(owner);
 
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "url", "ACTIVE");
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
-            postService.updatePostFromDto(1, dto);
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+
+            postService.updatePostFromDto(1L, dto, 1L);
 
             verify(postMapper).updatePostFromDto(dto, post);
         }
 
         @Test
+        void shouldDeletePost_WhenOwner() {
+            User owner = new User();
+            owner.setId(1L);
+            Post post = new Post();
+            post.setUser(owner);
+
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+            postService.deletePostById(1L, 1L);
+
+            verify(postRepository).deleteById(1L);
+        }
+
+        @Test
         void shouldInsertPost() {
-            PostRequest request = new PostRequest("Game", 50, "url", 1, "desc");
+            PostRequest request = new PostRequest("Game", 50, "http://url.com/img.jpg", "desc");
             Post mappedPost = new Post();
             User user = new User();
-
+            UserPrincipal principal = new UserPrincipal(1L, "test@test.com", List.of());
+            PostResponse response = mock(PostResponse.class);
 
             when(postMapper.toEntity(request)).thenReturn(mappedPost);
-            when(userRepository.findById(1)).thenReturn(Optional.of(user));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(postRepository.save(mappedPost)).thenReturn(mappedPost);
+            when(postMapper.toResponse(mappedPost)).thenReturn(response);
 
-            postService.insertPost(request);
+            PostResponse result = postService.insertPost(request, principal);
 
+            assertSame(response, result);
             verify(postMapper).toEntity(request);
             verify(postRepository).save(mappedPost);
-            verify(userRepository).findById(1);
+            verify(userRepository).findById(1L);
         }
     }
 
@@ -136,30 +160,72 @@ class PostServiceTest {
 
         @Test
         void shouldThrow_WhenUserNotFound() {
-            when(userRepository.findById(1)).thenReturn(Optional.empty());
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             assertThrows(NoSuchElementException.class,
-                    () -> postService.getUserById(1));
+                    () -> postService.getUserById(1L));
         }
 
         @Test
         void shouldThrow_WhenPostNotFound_OnUpdate() {
-            when(postRepository.findById(1)).thenReturn(Optional.empty());
+            when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "url", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
 
             assertThrows(NoSuchElementException.class,
-                    () -> postService.updatePostFromDto(1, dto));
+                    () -> postService.updatePostFromDto(1L, dto, 1L));
 
             verify(postMapper, never()).updatePostFromDto(any(), any());
         }
 
         @Test
-        void shouldThrow_WhenGetPostResponseFails() {
-            when(postRepository.findById(1)).thenReturn(Optional.empty());
+        void shouldThrow_WhenPostNotFound_OnDelete() {
+            when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
             assertThrows(NoSuchElementException.class,
-                    () -> postService.getPostResponseById(1));
+                    () -> postService.deletePostById(1L, 1L));
+
+            verify(postRepository, never()).deleteById(any());
+        }
+
+        @Test
+        void shouldThrow_WhenUpdatingPostNotOwned() {
+            User owner = new User();
+            owner.setId(2L); // post belongs to user 2
+            Post post = new Post();
+            post.setUser(owner);
+
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+
+            assertThrows(AccessDeniedException.class,
+                    () -> postService.updatePostFromDto(1L, dto, 1L)); // requester is user 1
+
+            verify(postMapper, never()).updatePostFromDto(any(), any());
+        }
+
+        @Test
+        void shouldThrow_WhenDeletingPostNotOwned() {
+            User owner = new User();
+            owner.setId(2L); // post belongs to user 2
+            Post post = new Post();
+            post.setUser(owner);
+
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+            assertThrows(AccessDeniedException.class,
+                    () -> postService.deletePostById(1L, 1L)); // requester is user 1
+
+            verify(postRepository, never()).deleteById(any());
+        }
+
+        @Test
+        void shouldThrow_WhenGetPostResponseFails() {
+            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+
+            assertThrows(NoSuchElementException.class,
+                    () -> postService.getPostResponseById(1L));
         }
     }
 
@@ -170,25 +236,17 @@ class PostServiceTest {
     class InteractionTests {
 
         @Test
-        void shouldDeletePost() {
-            postService.deletePostById(1);
-
-            verify(postRepository).deleteById(1);
-            verifyNoMoreInteractions(postRepository);
-        }
-
-        @Test
         void shouldMapPostResponseById() {
             Post post = new Post();
             PostResponse response = mock(PostResponse.class);
 
-            when(postRepository.findById(1)).thenReturn(Optional.of(post));
+            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
             when(postMapper.toResponse(post)).thenReturn(response);
 
-            PostResponse result = postService.getPostResponseById(1);
+            PostResponse result = postService.getPostResponseById(1L);
 
             assertNotNull(result);
-            verify(postRepository).findById(1);
+            verify(postRepository).findById(1L);
             verify(postMapper).toResponse(post);
         }
     }

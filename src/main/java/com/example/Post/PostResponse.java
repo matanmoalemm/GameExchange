@@ -1,12 +1,12 @@
 package com.example.Post;
 
 public record PostResponse(
-        Integer id,
+        Long id,
         String productName,
         String description,
         Integer price,
         String picUrl,
-        Integer userId,
+        Long userId,
         String status,
         java.time.LocalDateTime createdAt
 ) {

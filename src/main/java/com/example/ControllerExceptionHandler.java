@@ -1,8 +1,10 @@
 package com.example;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
@@ -11,28 +13,20 @@ import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class ControllerExceptionHandler {
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException ex) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-
-        // We only grab the field and the specific message you wrote in the DTO
-        ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
-        });
-
-        return ResponseEntity.badRequest().body(errors);
+        ex.getBindingResult().getAllErrors().forEach(error ->
+                errors.put(((FieldError) error).getField(), error.getDefaultMessage())
+        );
+        return errors;
     }
-
 
     @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<String> handleErrors(NoSuchElementException ex){
-        return ResponseEntity.badRequest().body(ex.getMessage());
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleNotFound(NoSuchElementException ex) {
+        return ex.getMessage();
     }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleErrors(Exception ex){
-        return ResponseEntity.badRequest().body("something went wrong");
-    }
-
-
 }

@@ -1,8 +1,10 @@
 package com.example.Post;
 
+import com.example.Security.UserPrincipal;
 import com.example.user.User;
 import com.example.user.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,7 +24,7 @@ public class PostService {
     }
 
 
-    public User getUserById(Integer id){
+    public User getUserById(Long id){
         return userRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("User id : " + id + "was not found")
         );
@@ -35,34 +37,42 @@ public class PostService {
                 .toList();
     }
 
-    public Post getPostById(Integer id) {
+    public Post getPostById(Long id) {
         return postRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Post not found")
         );
 
     }
 
-    public PostResponse getPostResponseById(Integer id){
+    public PostResponse getPostResponseById(Long id){
         return postMapper.toResponse(getPostById(id));
     }
 
 
     @Transactional
-    public void insertPost(PostRequest postRequest) {
+    public PostResponse insertPost(PostRequest postRequest, UserPrincipal userPrincipal) {
         Post post = postMapper.toEntity(postRequest);
-        post.setUser(getUserById(postRequest.userId()));
-        postRepository.save(post);
+        post.setUser(getUserById(userPrincipal.getId()));
+        return postMapper.toResponse(postRepository.save(post));
     }
 
-
     @Transactional
-    public void deletePostById(Integer id) {
+    public void deletePostById(Long id, Long requesterId) {
+        Post post = getPostById(id);
+        verifyOwnership(post, requesterId);
         postRepository.deleteById(id);
     }
 
     @Transactional
-    public void updatePostFromDto(Integer id,PostUpdateDto postUpdateDto){
+    public void updatePostFromDto(Long id, PostUpdateDto postUpdateDto, Long requesterId) {
         Post post = getPostById(id);
-        postMapper.updatePostFromDto(postUpdateDto,post);
+        verifyOwnership(post, requesterId);
+        postMapper.updatePostFromDto(postUpdateDto, post);
+    }
+
+    private void verifyOwnership(Post post, Long requesterId) {
+        if (!post.getUser().getId().equals(requesterId)) {
+            throw new AccessDeniedException("You do not own this post");
+        }
     }
 }

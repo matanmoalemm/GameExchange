@@ -28,17 +28,17 @@ public class UserService {
                 map(userMapper::toResponse).toList(); }
 
 
-    public User getUserById(Integer id){
+    public User getUserById(Long id){
         return userRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException(id + " number not found"));
     }
 
 
-    public UserResponse getUserResponseById(Integer id){
+    public UserResponse getUserResponseById(Long id){
         return userMapper.toResponse(getUserById(id));
     }
 
-    public void deleteUserById(Integer id){
+    public void deleteUserById(Long id){
         userRepository.deleteById(id);
     }
 
@@ -47,14 +47,15 @@ public class UserService {
         userRepository.save(userMapper.toEntity(user));
     }
 
-    public List<PostResponse> getUserPostsById(Integer id) {
+    public List<PostResponse> getUserPostsById(Long id) {
         User user  = getUserById(id);
         return userMapper.toPostResponses(user.getPosts());
     }
 
     @Transactional
-    public void updateUserFromDto(Integer id,UserUpdateDTO dto){
+    public void updateUserFromDto(Long id,UserUpdateDTO dto){
 
         userMapper.updateUserFromDto(dto,getUserById(id));
     }
+
 }

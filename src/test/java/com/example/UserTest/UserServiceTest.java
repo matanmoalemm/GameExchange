@@ -39,24 +39,24 @@ class UserServiceTest {
     @Test
     void shouldReturnUser_WhenUserExists() {
         User user = new User();
-        user.setId(1);
+        user.setId(1L);
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        User result = userService.getUserById(1);
+        User result = userService.getUserById(1L);
 
-        assertEquals(1, result.getId());
-        verify(userRepository).findById(1);
+        assertEquals(1L, result.getId());
+        verify(userRepository).findById(1L);
     }
 
     @Test
     void shouldThrowException_WhenUserNotFound() {
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class,
-                () -> userService.getUserById(1));
+                () -> userService.getUserById(1L));
 
-        verify(userRepository).findById(1);
+        verify(userRepository).findById(1L);
     }
 
     // =========================
@@ -65,7 +65,7 @@ class UserServiceTest {
     @Test
     void shouldReturnAllUsers_AsResponses() {
         User user = new User();
-        UserResponse response = new UserResponse(1, "john", List.of());
+        UserResponse response = new UserResponse(1L, "john");
 
         when(userRepository.findAll()).thenReturn(List.of(user));
         when(userMapper.toResponse(user)).thenReturn(response);
@@ -73,7 +73,7 @@ class UserServiceTest {
         List<UserResponse> result = userService.getUsers();
 
         assertEquals(1, result.size());
-        assertEquals("john", result.get(0).username());
+        assertEquals("john", result.get(0).name());
 
         verify(userRepository).findAll();
         verify(userMapper).toResponse(user);
@@ -97,10 +97,10 @@ class UserServiceTest {
         User user = new User();
         UserResponse response = mock(UserResponse.class);
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userMapper.toResponse(user)).thenReturn(response);
 
-        UserResponse result = userService.getUserResponseById(1);
+        UserResponse result = userService.getUserResponseById(1L);
 
         assertNotNull(result);
         verify(userMapper).toResponse(user);
@@ -116,19 +116,18 @@ class UserServiceTest {
         user.setPosts(List.of(post));
 
         PostResponse postResponse = new PostResponse(
-                1, "Item", "Desc", 10, "url", 1, "ACTIVE", LocalDateTime.now()
+                1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now()
         );
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
-        when(userMapper.toPostResponses(user.getPosts()))
-                .thenReturn(List.of(postResponse));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.toPostResponses(user.getPosts())).thenReturn(List.of(postResponse));
 
-        List<PostResponse> result = userService.getUserPostsById(1);
+        List<PostResponse> result = userService.getUserPostsById(1L);
 
         assertEquals(1, result.size());
         assertEquals("Item", result.get(0).productName());
 
-        verify(userRepository).findById(1);
+        verify(userRepository).findById(1L);
         verify(userMapper).toPostResponses(user.getPosts());
     }
 
@@ -137,10 +136,10 @@ class UserServiceTest {
         User user = new User();
         user.setPosts(List.of());
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userMapper.toPostResponses(List.of())).thenReturn(List.of());
 
-        List<PostResponse> result = userService.getUserPostsById(1);
+        List<PostResponse> result = userService.getUserPostsById(1L);
 
         assertTrue(result.isEmpty());
     }
@@ -152,24 +151,24 @@ class UserServiceTest {
     void shouldUpdateUserFromDto() {
         User user = new User();
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
-        userService.updateUserFromDto(1, dto);
+        userService.updateUserFromDto(1L, dto);
 
-        verify(userRepository).findById(1);
+        verify(userRepository).findById(1L);
         verify(userMapper).updateUserFromDto(dto, user);
     }
 
     @Test
     void shouldThrow_WhenUpdatingNonExistingUser() {
-        when(userRepository.findById(1)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        UserUpdateDTO dto = new UserUpdateDTO("x", "x");
+        UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
         assertThrows(NoSuchElementException.class,
-                () -> userService.updateUserFromDto(1, dto));
+                () -> userService.updateUserFromDto(1L, dto));
 
         verify(userMapper, never()).updateUserFromDto(any(), any());
     }
@@ -179,9 +178,9 @@ class UserServiceTest {
     // =========================
     @Test
     void shouldDeleteUserById() {
-        userService.deleteUserById(1);
+        userService.deleteUserById(1L);
 
-        verify(userRepository).deleteById(1);
+        verify(userRepository).deleteById(1L);
         verifyNoMoreInteractions(userRepository);
     }
 }

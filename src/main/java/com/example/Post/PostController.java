@@ -1,14 +1,9 @@
 package com.example.Post;
 
+import com.example.Security.UserPrincipal;
 import jakarta.validation.Valid;
-
-import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.ErrorResponse;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,42 +18,38 @@ public class PostController {
     }
 
     @GetMapping
-    @ResponseStatus(HttpStatus.FOUND)
+    @ResponseStatus(HttpStatus.OK)
     public List<PostResponse> getLists(){
 
         return postService.getPosts();
     }
     @GetMapping("{id}")
-    @ResponseStatus(HttpStatus.FOUND)
-    public PostResponse getPostById(@PathVariable Integer id){
+    @ResponseStatus(HttpStatus.OK)
+    public PostResponse getPostById(@PathVariable Long id){
 
         return postService.getPostResponseById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void addNewPost(
-            @RequestBody @Valid PostRequest postRequest
-    ){
-        postService.insertPost(postRequest);
+    public PostResponse addNewPost(@AuthenticationPrincipal UserPrincipal principal,
+                                   @RequestBody @Valid PostRequest postRequest) {
+        return postService.insertPost(postRequest, principal);
     }
 
     @DeleteMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePost(
-            @PathVariable Integer id
-    ){
-        postService.deletePostById(id);
+    public void deletePost(@AuthenticationPrincipal UserPrincipal principal,
+                           @PathVariable Long id) {
+        postService.deletePostById(id, principal.getId());
     }
 
     @PatchMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updatePostFromDto(
-                @PathVariable Integer id,
-                @Valid @RequestBody PostUpdateDto postUpdateDto
-
-    ){
-        postService.updatePostFromDto(id, postUpdateDto);
+    public void updatePostFromDto(@AuthenticationPrincipal UserPrincipal principal,
+                                  @PathVariable Long id,
+                                  @Valid @RequestBody PostUpdateDto postUpdateDto) {
+        postService.updatePostFromDto(id, postUpdateDto, principal.getId());
     }
 
 

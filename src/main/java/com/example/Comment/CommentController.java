@@ -1,5 +1,9 @@
 package com.example.Comment;
+
+import com.example.Security.UserPrincipal;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,28 +18,24 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-
-    @GetMapping
-    public List<Comment> getLists(){
-
-        return commentService.getComments();
+    @GetMapping("/post/{postId}")
+    @ResponseStatus(HttpStatus.OK)
+    public List<CommentResponse> getCommentsByPost(@AuthenticationPrincipal UserPrincipal principal,
+                                                   @PathVariable Long postId) {
+        return commentService.getCommentsByPostId(postId, principal.getId());
     }
-    @GetMapping("{id}")
-    public Comment getCommentById(@PathVariable Integer id){
 
-        return commentService.getCommentById(id);
-    }
     @PostMapping
-    public void addNewComment(
-            @RequestBody @Valid Comment comment
-    ){
-        commentService.insertComment(comment);
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentResponse addNewComment(@AuthenticationPrincipal UserPrincipal principal,
+                                         @RequestBody @Valid CommentRequest request) {
+        return commentService.insertComment(request, principal);
     }
 
     @DeleteMapping("{id}")
-    public void deletePost(
-            @PathVariable Integer id
-    ){
-        commentService.deleteCommentById(id);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@AuthenticationPrincipal UserPrincipal principal,
+                              @PathVariable Long id) {
+        commentService.deleteCommentById(id, principal.getId());
     }
 }

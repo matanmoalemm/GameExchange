@@ -1,15 +1,16 @@
 package com.example.UserTest;
 
+import com.example.Comment.CommentRepository;
 import com.example.Post.Post;
 import com.example.Post.PostRepository;
-import com.example.Post.PostResponse;
+import com.example.Security.JwtUtils;
+import com.example.Security.UserPrincipal;
 import com.example.user.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
@@ -30,203 +31,196 @@ public class UserControllerFullIntegrationTest {
     @Autowired
     private PostRepository postRepository;
 
+    @Autowired
+    private CommentRepository commentRepository;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    private User testUser;
+    private String testToken;
+
     @BeforeEach
     void setUp() {
+        commentRepository.deleteAll();
         postRepository.deleteAll();
         userRepository.deleteAll();
+
+        testUser = createUser("test_user", "test@example.com");
+        testToken = generateToken(testUser);
+    }
+
+    // =========================
+    // GET /me
+    // =========================
+    @Test
+    void shouldGetMyProfile() {
+        restTestClient.get()
+                .uri("/api/v1/users/me")
+                .header("Authorization", "Bearer " + testToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(UserResponse.class)
+                .value(response -> assertThat(response.name()).isEqualTo("test_user"));
     }
 
     @Test
-    void shouldCreateUser() {
-        UserRequest request = new UserRequest("john_doe", "john@example.com");
-
-        restTestClient.post()
-                .uri("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
+    void shouldReturn401WhenNoToken() {
+        restTestClient.get()
+                .uri("/api/v1/users/me")
                 .exchange()
-                .expectStatus().isCreated();
-
-        List<User> users = userRepository.findAll();
-        assertThat(users).hasSize(1);
-        assertThat(users.get(0).getUsername()).isEqualTo("john_doe");
+                .expectStatus().isUnauthorized();
     }
 
+    // =========================
+    // GET /me/posts
+    // =========================
     @Test
-    void shouldNotCreateUserWhenValidationFailsCompletely() {
-        // Blank username/email, too short username, invalid regex, invalid email format
-        UserRequest request = new UserRequest("ai", "not-an-email");
+    void shouldGetMyPosts() {
+        createPost("Post 1", 100, testUser);
+        createPost("Post 2", 200, testUser);
 
-        restTestClient.post()
-                .uri("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
+        restTestClient.get()
+                .uri("/api/v1/users/me/posts")
+                .header("Authorization", "Bearer " + testToken)
                 .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.username").isEqualTo("Username must be between 3 and 20 characters")
-                .jsonPath("$.email").isEqualTo("Please provide a valid email address");
+                .expectStatus().isOk()
+                .expectBody(List.class)
+                .value(list -> assertThat(list).hasSize(2));
     }
 
-    @Test
-    void shouldNotCreateUserWhenFieldsAreBlank() {
-        UserRequest request = new UserRequest("", "");
-
-        restTestClient.post()
-                .uri("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.username").isEqualTo("Username must be between 3 and 20 characters")
-                .jsonPath("$.email").isEqualTo("Email is required");
-    }
-
-    @Test
-    void shouldNotCreateUserWhenUsernamePatternFails() {
-        UserRequest request = new UserRequest("user space", "valid@example.com");
-
-        restTestClient.post()
-                .uri("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.username").isEqualTo("Username can only contain letters, numbers, dots, and underscores");
-    }
-
-    @Test
-    void shouldNotUpdateUserWhenValidationFails() {
-        User user = createUser("valid_user", "valid@example.com");
-        UserUpdateDTO updateDto = new UserUpdateDTO("ab", "invalid-email");
-
-        restTestClient.patch()
-                .uri("/api/v1/users/{id}", user.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(updateDto)
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.username").isEqualTo("Username must be between 3 and 20 characters")
-                .jsonPath("$.email").isEqualTo("Please provide a valid email address");
-    }
-
+    // =========================
+    // GET / (all users)
+    // =========================
     @Test
     void shouldGetAllUsers() {
-        createUser("user1", "user1@example.com");
         createUser("user2", "user2@example.com");
 
         restTestClient.get()
                 .uri("/api/v1/users")
+                .header("Authorization", "Bearer " + testToken)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.FOUND)
+                .expectStatus().isOk()
                 .expectBody(List.class)
                 .value(list -> assertThat(list).hasSize(2));
     }
 
+    // =========================
+    // GET /{id}
+    // =========================
     @Test
-    void shouldGetUserById() {
-        User user = createUser("john_doe", "john@example.com");
-
+    void shouldGetUserPublicProfile() {
         restTestClient.get()
-                .uri("/api/v1/users/{id}", user.getId())
+                .uri("/api/v1/users/{id}", testUser.getId())
+                .header("Authorization", "Bearer " + testToken)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.FOUND)
+                .expectStatus().isOk()
                 .expectBody(UserResponse.class)
-                .value(response -> {
-                    assertThat(response.username()).isEqualTo("john_doe");
-                });
+                .value(response -> assertThat(response.name()).isEqualTo("test_user"));
     }
 
     @Test
-    void shouldReturn400WhenUserNotFound() {
+    void shouldReturn404WhenUserNotFound() {
         restTestClient.get()
                 .uri("/api/v1/users/9999")
+                .header("Authorization", "Bearer " + testToken)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus().isNotFound();
     }
 
+    // =========================
+    // GET /{id}/posts
+    // =========================
     @Test
-    void shouldGetUserPosts() {
-        User user = createUser("john_doe", "john@example.com");
-        createPost("Post 1", 100, user);
-        createPost("Post 2", 200, user);
+    void shouldGetPostsByUserId() {
+        createPost("Post 1", 100, testUser);
+        createPost("Post 2", 200, testUser);
 
         restTestClient.get()
-                .uri("/api/v1/users/{id}/posts", user.getId())
+                .uri("/api/v1/users/{id}/posts", testUser.getId())
+                .header("Authorization", "Bearer " + testToken)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.FOUND)
+                .expectStatus().isOk()
                 .expectBody(List.class)
                 .value(list -> assertThat(list).hasSize(2));
     }
 
+    // =========================
+    // PATCH /me
+    // =========================
     @Test
-    void shouldDeleteUserAndItsPosts() {
-        User user = createUser("john_doe", "john@example.com");
-        createPost("Post 1", 100, user);
-        createPost("Post 2", 200, user);
-
-        assertThat(postRepository.findAll()).hasSize(2);
-
-        restTestClient.delete()
-                .uri("/api/v1/users/{id}", user.getId())
-                .exchange()
-                .expectStatus().isNoContent();
-
-        assertThat(userRepository.existsById(user.getId())).isFalse();
-        assertThat(postRepository.findAll()).isEmpty();
-    }
-
-    @Test
-    void shouldUpdateUser() {
-        User user = createUser("old_username", "old@example.com");
+    void shouldUpdateMyProfile() {
         UserUpdateDTO updateDto = new UserUpdateDTO("new_username", "new@example.com");
 
         restTestClient.patch()
-                .uri("/api/v1/users/{id}", user.getId())
+                .uri("/api/v1/users/me")
+                .header("Authorization", "Bearer " + testToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(updateDto)
                 .exchange()
                 .expectStatus().isNoContent();
 
-        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
+        User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
         assertThat(updatedUser.getUsername()).isEqualTo("new_username");
         assertThat(updatedUser.getEmail()).isEqualTo("new@example.com");
     }
 
     @Test
-    void shouldUpdateUserPartially() {
-        User user = createUser("initial_user", "initial@example.com");
-
-        // Only update email
+    void shouldUpdateMyProfilePartially() {
         UserUpdateDTO updateDto = new UserUpdateDTO(null, "new@example.com");
 
         restTestClient.patch()
-                .uri("/api/v1/users/{id}", user.getId())
+                .uri("/api/v1/users/me")
+                .header("Authorization", "Bearer " + testToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(updateDto)
                 .exchange()
                 .expectStatus().isNoContent();
 
-        User updatedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(updatedUser.getUsername()).isEqualTo("initial_user"); // Should remain unchanged
+        User updatedUser = userRepository.findById(testUser.getId()).orElseThrow();
+        assertThat(updatedUser.getUsername()).isEqualTo("test_user"); // unchanged
         assertThat(updatedUser.getEmail()).isEqualTo("new@example.com");
     }
 
     @Test
-    void shouldReturn400WhenUpdatingNonExistentUser() {
-        UserUpdateDTO updateDto = new UserUpdateDTO("new_user", "new@example.com");
+    void shouldNotUpdateWhenValidationFails() {
+        UserUpdateDTO updateDto = new UserUpdateDTO("ab", "invalid-email");
 
         restTestClient.patch()
-                .uri("/api/v1/users/9999")
+                .uri("/api/v1/users/me")
+                .header("Authorization", "Bearer " + testToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(updateDto)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.name").isEqualTo("Username must be between 3 and 20 characters")
+                .jsonPath("$.email").isEqualTo("Please provide a valid email address");
     }
 
+    // =========================
+    // DELETE /me
+    // =========================
+    @Test
+    void shouldDeleteMyAccount() {
+        createPost("Post 1", 100, testUser);
+        createPost("Post 2", 200, testUser);
+
+        assertThat(postRepository.findAll()).hasSize(2);
+
+        restTestClient.delete()
+                .uri("/api/v1/users/me")
+                .header("Authorization", "Bearer " + testToken)
+                .exchange()
+                .expectStatus().isNoContent();
+
+        assertThat(userRepository.existsById(testUser.getId())).isFalse();
+        assertThat(postRepository.findAll()).isEmpty();
+    }
+
+    // =========================
+    // Helpers
+    // =========================
     private User createUser(String username, String email) {
         User user = new User();
         user.setUsername(username);
@@ -242,5 +236,10 @@ public class UserControllerFullIntegrationTest {
         post.setUser(user);
         post.setStatus("ACTIVE");
         postRepository.save(post);
+    }
+
+    private String generateToken(User user) {
+        UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), List.of());
+        return jwtUtils.generateToken(principal);
     }
 }

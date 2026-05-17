@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Secrets ###
+client_secret_*.json
+src/main/resources/application-local.properties

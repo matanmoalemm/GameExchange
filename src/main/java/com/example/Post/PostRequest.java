@@ -14,9 +14,6 @@ public record PostRequest(
         @Pattern(regexp = "^(https?|ftp)://.*$", message = "PicUrl must be a valid URL")
         String picUrl,
 
-        @NotNull(message = "User ID is required")
-        Integer userId,
-
         @Size(max = 1000, message = "Description cannot exceed 1000 characters")
         String description
 ) {}
