@@ -81,8 +81,8 @@ Mutating endpoints (update / delete) compare the authenticated user's ID against
 ### Posts — `api/v1/posts`
 
 | Method | Path | Auth | Owner | Description |
-|---|---|---|---|---|
-| `GET` | `/api/v1/posts` | Auth | — | List all posts |
+|---|---|------|---|---|
+| `GET` | `/api/v1/posts` | Public    | — | List all posts |
 | `GET` | `/api/v1/posts/{id}` | Auth | — | Get a single post |
 | `POST` | `/api/v1/posts` | Auth | — | Create a new post (assigned to the authenticated user) |
 | `PATCH` | `/api/v1/posts/{id}` | Auth | Owner | Update your post (partial update) |

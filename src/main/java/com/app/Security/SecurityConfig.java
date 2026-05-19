@@ -61,7 +61,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/error", "/api/v1/auth/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/", "/error", "/api/v1/auth/**", "/oauth2/**","/api/v1/posts").permitAll()
                         .anyRequest().authenticated() // every route not listed above requires a valid authenticated user
                 )
                 .oauth2Login(oauth2 -> oauth2
