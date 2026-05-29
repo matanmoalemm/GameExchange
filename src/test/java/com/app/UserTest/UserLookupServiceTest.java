@@ -3,6 +3,8 @@ package com.app.UserTest;
 import com.app.user.User;
 import com.app.user.UserLookupService;
 import com.app.user.UserRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserLookupService Unit Tests")
 class UserLookupServiceTest {
 
     @Mock
@@ -24,26 +27,38 @@ class UserLookupServiceTest {
     @InjectMocks
     private UserLookupService userLookupService;
 
-    @Test
-    void shouldReturnUser_WhenUserExists() {
-        User user = new User();
-        user.setId(1L);
+    @Nested
+    @DisplayName("getById")
+    class GetById {
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        @Test
+        @DisplayName("should return user when valid ID is provided")
+        void shouldReturnUser_WhenUserExists() {
+            User user = new User();
+            user.setId(1L);
 
-        User result = userLookupService.getById(1L);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertSame(user, result);
-        verify(userRepository).findById(1L);
-    }
+            User result = userLookupService.getById(1L);
 
-    @Test
-    void shouldThrow_WhenUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            assertSame(user, result);
+            verify(userRepository).findById(1L);
+        }
 
-        assertThrows(NoSuchElementException.class,
-                () -> userLookupService.getById(1L));
+        @Test
+        @DisplayName("should throw NoSuchElementException when user is not found")
+        void shouldThrow_WhenUserNotFound() {
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        verify(userRepository).findById(1L);
+            assertThrows(NoSuchElementException.class, () -> userLookupService.getById(1L));
+            verify(userRepository).findById(1L);
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when ID is null")
+        void shouldThrow_WhenIdIsNull() {
+            assertThrows(NoSuchElementException.class, () -> userLookupService.getById(null));
+            verify(userRepository).findById(null);
+        }
     }
 }

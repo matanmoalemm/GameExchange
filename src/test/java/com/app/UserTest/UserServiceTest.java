@@ -4,6 +4,8 @@ import com.app.Post.Post;
 import com.app.Post.PostMapper;
 import com.app.Post.PostResponse;
 import com.app.user.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -18,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserService Unit Tests")
 class UserServiceTest {
 
     @Mock
@@ -35,154 +39,305 @@ class UserServiceTest {
     @InjectMocks
     private UserService userService;
 
-    // =========================
-    // GET USER BY ID
-    // =========================
-    @Test
-    void shouldReturnUser_WhenUserExists() {
-        User user = new User();
-        user.setId(1L);
+    @Nested
+    @DisplayName("getUsers")
+    class GetUsers {
 
-        when(userLookupService.getById(1L)).thenReturn(user);
+        @Test
+        @DisplayName("should return all users as mapped responses")
+        void shouldReturnAllUsersAsMappedResponses() {
+            User user = new User();
+            UserResponse response = new UserResponse(1L, "john");
 
-        User result = userService.getUserById(1L);
+            when(userRepository.findAll()).thenReturn(List.of(user));
+            when(userMapper.toResponse(user)).thenReturn(response);
 
-        assertEquals(1L, result.getId());
-        verify(userLookupService).getById(1L);
+            List<UserResponse> result = userService.getUsers();
+
+            assertEquals(1, result.size());
+            assertEquals("john", result.get(0).name());
+            verify(userRepository).findAll();
+            verify(userMapper).toResponse(user);
+        }
+
+        @Test
+        @DisplayName("should return empty list when no users exist")
+        void shouldReturnEmptyList_WhenNoUsers() {
+            when(userRepository.findAll()).thenReturn(List.of());
+
+            List<UserResponse> result = userService.getUsers();
+
+            assertTrue(result.isEmpty());
+            verify(userRepository).findAll();
+        }
+
+        @Test
+        @DisplayName("should handle large number of users without degradation")
+        void shouldHandleLargeNumberOfUsers() {
+            List<User> users = Collections.nCopies(1000, new User());
+            UserResponse response = new UserResponse(1L, "user");
+
+            when(userRepository.findAll()).thenReturn(users);
+            when(userMapper.toResponse(any())).thenReturn(response);
+
+            List<UserResponse> result = userService.getUsers();
+
+            assertEquals(1000, result.size());
+            verify(userMapper, times(1000)).toResponse(any());
+        }
     }
 
-    @Test
-    void shouldThrowException_WhenUserNotFound() {
-        when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User id: 1 was not found"));
+    @Nested
+    @DisplayName("getUserById")
+    class GetUserById {
 
-        assertThrows(NoSuchElementException.class,
-                () -> userService.getUserById(1L));
+        @Test
+        @DisplayName("should return user when valid ID is provided")
+        void shouldReturnUser_WhenValidId() {
+            User user = new User();
+            user.setId(1L);
 
-        verify(userLookupService).getById(1L);
+            when(userLookupService.getById(1L)).thenReturn(user);
+
+            User result = userService.getUserById(1L);
+
+            assertEquals(1L, result.getId());
+            verify(userLookupService).getById(1L);
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when user is not found")
+        void shouldThrow_WhenUserNotFound() {
+            when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserById(1L));
+            verify(userLookupService).getById(1L);
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when ID is null")
+        void shouldThrow_WhenIdIsNull() {
+            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserById(null));
+        }
     }
 
-    // =========================
-    // GET USERS
-    // =========================
-    @Test
-    void shouldReturnAllUsers_AsResponses() {
-        User user = new User();
-        UserResponse response = new UserResponse(1L, "john");
+    @Nested
+    @DisplayName("getUserResponseById")
+    class GetUserResponseById {
 
-        when(userRepository.findAll()).thenReturn(List.of(user));
-        when(userMapper.toResponse(user)).thenReturn(response);
+        @Test
+        @DisplayName("should return UserResponse when valid ID is provided")
+        void shouldReturnUserResponse_WhenValidId() {
+            User user = new User();
+            UserResponse response = mock(UserResponse.class);
 
-        List<UserResponse> result = userService.getUsers();
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(userMapper.toResponse(user)).thenReturn(response);
 
-        assertEquals(1, result.size());
-        assertEquals("john", result.get(0).name());
+            UserResponse result = userService.getUserResponseById(1L);
 
-        verify(userRepository).findAll();
-        verify(userMapper).toResponse(user);
+            assertSame(response, result);
+            verify(userMapper).toResponse(user);
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when user is not found")
+        void shouldThrow_WhenUserNotFound() {
+            when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserResponseById(1L));
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when ID is null")
+        void shouldThrow_WhenIdIsNull() {
+            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserResponseById(null));
+        }
     }
 
-    @Test
-    void shouldReturnEmptyList_WhenNoUsersExist() {
-        when(userRepository.findAll()).thenReturn(List.of());
+    @Nested
+    @DisplayName("deleteUserById")
+    class DeleteUserById {
 
-        List<UserResponse> result = userService.getUsers();
+        @Test
+        @DisplayName("should delete user when valid ID is provided")
+        void shouldDeleteUser_WhenValidId() {
+            userService.deleteUserById(1L);
 
-        assertTrue(result.isEmpty());
-        verify(userRepository).findAll();
+            verify(userRepository).deleteById(1L);
+            verifyNoMoreInteractions(userRepository);
+        }
+
+        @Test
+        @DisplayName("should invoke deleteById with null ID — no service-level null guard")
+        void shouldInvokeDeleteWithNullId() {
+            userService.deleteUserById(null);
+
+            verify(userRepository).deleteById(null);
+        }
     }
 
-    // =========================
-    // GET USER RESPONSE BY ID
-    // =========================
-    @Test
-    void shouldReturnUserResponseById() {
-        User user = new User();
-        UserResponse response = mock(UserResponse.class);
+    @Nested
+    @DisplayName("insertUser")
+    class InsertUser {
 
-        when(userLookupService.getById(1L)).thenReturn(user);
-        when(userMapper.toResponse(user)).thenReturn(response);
+        @Test
+        @DisplayName("should insert user when request is valid")
+        void shouldInsertUser_WhenValidRequest() {
+            UserRequest request = new UserRequest("john", "john@test.com");
+            User user = new User();
 
-        UserResponse result = userService.getUserResponseById(1L);
+            when(userMapper.toEntity(request)).thenReturn(user);
 
-        assertNotNull(result);
-        verify(userMapper).toResponse(user);
+            userService.insertUser(request);
+
+            verify(userMapper).toEntity(request);
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        @DisplayName("should call save with null entity when request is null — no service-level null guard")
+        void shouldCallSaveWithNullEntity_WhenRequestIsNull() {
+            userService.insertUser(null);
+
+            verify(userMapper).toEntity(null);
+            verify(userRepository).save(null);
+        }
+
+        @Test
+        @DisplayName("should pass blank name through to mapper — validation is at the controller")
+        void shouldPassThrough_WhenNameIsBlank() {
+            UserRequest request = new UserRequest("   ", "john@test.com");
+            User user = new User();
+
+            when(userMapper.toEntity(request)).thenReturn(user);
+
+            assertDoesNotThrow(() -> userService.insertUser(request));
+            verify(userRepository).save(user);
+        }
     }
 
-    // =========================
-    // POSTS BY USER
-    // =========================
-    @Test
-    void shouldReturnUserPostsById() {
-        User user = new User();
-        Post post = new Post();
-        user.setPosts(List.of(post));
+    @Nested
+    @DisplayName("getUserPostsById")
+    class GetUserPostsById {
 
-        PostResponse postResponse = new PostResponse(
-                1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now()
-        );
+        @Test
+        @DisplayName("should return user's posts when user has posts")
+        void shouldReturnUserPosts_WhenUserHasPosts() {
+            User user = new User();
+            Post post = new Post();
+            user.setPosts(List.of(post));
+            PostResponse postResponse = new PostResponse(1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now());
 
-        when(userLookupService.getById(1L)).thenReturn(user);
-        when(userMapper.toPostResponses(user.getPosts())).thenReturn(List.of(postResponse));
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(userMapper.toPostResponses(user.getPosts())).thenReturn(List.of(postResponse));
 
-        List<PostResponse> result = userService.getUserPostsById(1L);
+            List<PostResponse> result = userService.getUserPostsById(1L);
 
-        assertEquals(1, result.size());
-        assertEquals("Item", result.get(0).productName());
+            assertEquals(1, result.size());
+            assertEquals("Item", result.get(0).productName());
+            verify(userLookupService).getById(1L);
+        }
 
-        verify(userLookupService).getById(1L);
-        verify(userMapper).toPostResponses(user.getPosts());
+        @Test
+        @DisplayName("should return empty list when user has no posts")
+        void shouldReturnEmptyList_WhenUserHasNoPosts() {
+            User user = new User();
+            user.setPosts(List.of());
+
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(userMapper.toPostResponses(List.of())).thenReturn(List.of());
+
+            List<PostResponse> result = userService.getUserPostsById(1L);
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when user is not found")
+        void shouldThrow_WhenUserNotFound() {
+            when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserPostsById(1L));
+        }
+
+        @Test
+        @DisplayName("should throw NoSuchElementException when ID is null")
+        void shouldThrow_WhenIdIsNull() {
+            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
+
+            assertThrows(NoSuchElementException.class, () -> userService.getUserPostsById(null));
+        }
+
+        @Test
+        @DisplayName("should handle large number of posts without degradation")
+        void shouldHandleLargeNumberOfPosts() {
+            User user = new User();
+            List<Post> posts = Collections.nCopies(1000, new Post());
+            user.setPosts(posts);
+            List<PostResponse> responses = Collections.nCopies(1000, mock(PostResponse.class));
+
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(userMapper.toPostResponses(posts)).thenReturn(responses);
+
+            List<PostResponse> result = userService.getUserPostsById(1L);
+
+            assertEquals(1000, result.size());
+        }
     }
 
-    @Test
-    void shouldReturnEmptyPosts_WhenUserHasNoPosts() {
-        User user = new User();
-        user.setPosts(List.of());
+    @Nested
+    @DisplayName("updateUserFromDto")
+    class UpdateUserFromDto {
 
-        when(userLookupService.getById(1L)).thenReturn(user);
-        when(userMapper.toPostResponses(List.of())).thenReturn(List.of());
+        @Test
+        @DisplayName("should update user when valid ID and DTO are provided")
+        void shouldUpdateUser_WhenValidIdAndDto() {
+            User user = new User();
+            UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
-        List<PostResponse> result = userService.getUserPostsById(1L);
+            when(userLookupService.getById(1L)).thenReturn(user);
 
-        assertTrue(result.isEmpty());
-    }
+            userService.updateUserFromDto(1L, dto);
 
-    // =========================
-    // UPDATE USER
-    // =========================
-    @Test
-    void shouldUpdateUserFromDto() {
-        User user = new User();
+            verify(userLookupService).getById(1L);
+            verify(userMapper).updateUserFromDto(dto, user);
+        }
 
-        when(userLookupService.getById(1L)).thenReturn(user);
+        @Test
+        @DisplayName("should throw NoSuchElementException when user is not found")
+        void shouldThrow_WhenUserNotFound() {
+            when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User not found"));
+            UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
-        UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
+            assertThrows(NoSuchElementException.class, () -> userService.updateUserFromDto(1L, dto));
+            verify(userMapper, never()).updateUserFromDto(any(), any());
+        }
 
-        userService.updateUserFromDto(1L, dto);
+        @Test
+        @DisplayName("should throw NoSuchElementException when ID is null")
+        void shouldThrow_WhenIdIsNull() {
+            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
+            UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
-        verify(userLookupService).getById(1L);
-        verify(userMapper).updateUserFromDto(dto, user);
-    }
+            assertThrows(NoSuchElementException.class, () -> userService.updateUserFromDto(null, dto));
+        }
 
-    @Test
-    void shouldThrow_WhenUpdatingNonExistingUser() {
-        when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User id: 1 was not found"));
+        @Test
+        @DisplayName("should pass null DTO fields to mapper — MapStruct IGNORE strategy handles them")
+        void shouldPassNullDtoFieldsToMapper() {
+            User user = new User();
+            UserUpdateDTO dto = new UserUpdateDTO(null, null);
 
-        UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
+            when(userLookupService.getById(1L)).thenReturn(user);
 
-        assertThrows(NoSuchElementException.class,
-                () -> userService.updateUserFromDto(1L, dto));
+            userService.updateUserFromDto(1L, dto);
 
-        verify(userMapper, never()).updateUserFromDto(any(), any());
-    }
-
-    // =========================
-    // DELETE USER
-    // =========================
-    @Test
-    void shouldDeleteUserById() {
-        userService.deleteUserById(1L);
-
-        verify(userRepository).deleteById(1L);
-        verifyNoMoreInteractions(userRepository);
+            verify(userMapper).updateUserFromDto(dto, user);
+        }
     }
 }
