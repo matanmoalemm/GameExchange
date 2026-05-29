@@ -28,8 +28,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> registerNewUser(userRequest, oAuth2User));
 
-        user.setUsername(oAuth2User.getAttribute("name"));
-        userRepository.save(user);
+//        user.setUsername(oAuth2User.getAttribute("name"));
+//        userRepository.save(user);
 
         return UserPrincipal.create(user, oAuth2User.getAttributes());
     }

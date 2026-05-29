@@ -2,7 +2,7 @@ package com.app.Post;
 
 import com.app.Security.UserPrincipal;
 import com.app.user.User;
-import com.app.user.UserRepository;
+import com.app.user.UserLookupService;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -14,24 +14,16 @@ import java.util.NoSuchElementException;
 @Service
 public class PostService {
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final UserLookupService userLookupService;
     private final PostMapper postMapper;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, PostMapper postMapper) {
+    public PostService(PostRepository postRepository, UserLookupService userLookupService, PostMapper postMapper) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
+        this.userLookupService = userLookupService;
         this.postMapper = postMapper;
     }
 
-
-    public User getUserById(Long id){
-        return userRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("User id : " + id + "was not found")
-        );
-    }
-
     public List<PostResponse> getPosts() {
-
         return postRepository.findAll().stream()
                 .map(postMapper::toResponse)
                 .toList();
@@ -41,18 +33,16 @@ public class PostService {
         return postRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Post not found")
         );
-
     }
 
-    public PostResponse getPostResponseById(Long id){
+    public PostResponse getPostResponseById(Long id) {
         return postMapper.toResponse(getPostById(id));
     }
-
 
     @Transactional
     public PostResponse insertPost(PostRequest postRequest, UserPrincipal userPrincipal) {
         Post post = postMapper.toEntity(postRequest);
-        post.setUser(getUserById(userPrincipal.getId()));
+        post.setUser(userLookupService.getById(userPrincipal.getId()));
         return postMapper.toResponse(postRepository.save(post));
     }
 

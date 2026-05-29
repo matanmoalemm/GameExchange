@@ -2,7 +2,8 @@ package com.app.Post;
 
 import com.app.Security.UserPrincipal;
 import com.app.user.User;
-import com.app.user.UserRepository;
+import com.app.user.UserLookupService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,13 +21,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("PostService Unit Tests")
 class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
     private PostMapper postMapper;
@@ -39,19 +41,6 @@ class PostServiceTest {
     // =========================
     @Nested
     class HappyPath {
-
-        @Test
-        void shouldReturnUser_WhenUserExists() {
-            User user = new User();
-            user.setId(1L);
-
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-            User result = postService.getUserById(1L);
-
-            assertSame(user, result);
-            verify(userRepository).findById(1L);
-        }
 
         @Test
         void shouldReturnMappedPosts() {
@@ -109,7 +98,7 @@ class PostServiceTest {
             PostResponse response = mock(PostResponse.class);
 
             when(postMapper.toEntity(request)).thenReturn(mappedPost);
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userLookupService.getById(1L)).thenReturn(user);
             when(postRepository.save(mappedPost)).thenReturn(mappedPost);
             when(postMapper.toResponse(mappedPost)).thenReturn(response);
 
@@ -118,7 +107,7 @@ class PostServiceTest {
             assertSame(response, result);
             verify(postMapper).toEntity(request);
             verify(postRepository).save(mappedPost);
-            verify(userRepository).findById(1L);
+            verify(userLookupService).getById(1L);
         }
     }
 
@@ -157,14 +146,6 @@ class PostServiceTest {
     // =========================
     @Nested
     class ErrorCases {
-
-        @Test
-        void shouldThrow_WhenUserNotFound() {
-            when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-            assertThrows(NoSuchElementException.class,
-                    () -> postService.getUserById(1L));
-        }
 
         @Test
         void shouldThrow_WhenPostNotFound_OnUpdate() {

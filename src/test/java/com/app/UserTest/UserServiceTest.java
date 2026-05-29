@@ -13,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -30,6 +29,9 @@ class UserServiceTest {
     @Mock
     private PostMapper postMapper;
 
+    @Mock
+    private UserLookupService userLookupService;
+
     @InjectMocks
     private UserService userService;
 
@@ -41,22 +43,22 @@ class UserServiceTest {
         User user = new User();
         user.setId(1L);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userLookupService.getById(1L)).thenReturn(user);
 
         User result = userService.getUserById(1L);
 
         assertEquals(1L, result.getId());
-        verify(userRepository).findById(1L);
+        verify(userLookupService).getById(1L);
     }
 
     @Test
     void shouldThrowException_WhenUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User id: 1 was not found"));
 
         assertThrows(NoSuchElementException.class,
                 () -> userService.getUserById(1L));
 
-        verify(userRepository).findById(1L);
+        verify(userLookupService).getById(1L);
     }
 
     // =========================
@@ -97,7 +99,7 @@ class UserServiceTest {
         User user = new User();
         UserResponse response = mock(UserResponse.class);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userLookupService.getById(1L)).thenReturn(user);
         when(userMapper.toResponse(user)).thenReturn(response);
 
         UserResponse result = userService.getUserResponseById(1L);
@@ -119,7 +121,7 @@ class UserServiceTest {
                 1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now()
         );
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userLookupService.getById(1L)).thenReturn(user);
         when(userMapper.toPostResponses(user.getPosts())).thenReturn(List.of(postResponse));
 
         List<PostResponse> result = userService.getUserPostsById(1L);
@@ -127,7 +129,7 @@ class UserServiceTest {
         assertEquals(1, result.size());
         assertEquals("Item", result.get(0).productName());
 
-        verify(userRepository).findById(1L);
+        verify(userLookupService).getById(1L);
         verify(userMapper).toPostResponses(user.getPosts());
     }
 
@@ -136,7 +138,7 @@ class UserServiceTest {
         User user = new User();
         user.setPosts(List.of());
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userLookupService.getById(1L)).thenReturn(user);
         when(userMapper.toPostResponses(List.of())).thenReturn(List.of());
 
         List<PostResponse> result = userService.getUserPostsById(1L);
@@ -151,19 +153,19 @@ class UserServiceTest {
     void shouldUpdateUserFromDto() {
         User user = new User();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userLookupService.getById(1L)).thenReturn(user);
 
         UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
         userService.updateUserFromDto(1L, dto);
 
-        verify(userRepository).findById(1L);
+        verify(userLookupService).getById(1L);
         verify(userMapper).updateUserFromDto(dto, user);
     }
 
     @Test
     void shouldThrow_WhenUpdatingNonExistingUser() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User id: 1 was not found"));
 
         UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 

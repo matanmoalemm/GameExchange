@@ -1,0 +1,7 @@
+lets make readme file for github, I want this file to include:
+
+1. Used technologies in the project
+2. A quick explanation about the platform and its purpose.
+3. an explanation about the security of the application ,and the authentication method.
+4. the api available requests and the security level that is needed for each request.
+5. the tests workflow that were used, and the technologies used for it.
