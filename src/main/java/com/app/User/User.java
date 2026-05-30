@@ -1,5 +1,6 @@
 package com.app.User;
 
+import com.app.Comment.Comment;
 import com.app.Post.Post;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,8 +27,12 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Post> posts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Comment> comments = new ArrayList<>();
+
 
     private String providerId;
 }

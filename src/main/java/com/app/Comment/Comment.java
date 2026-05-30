@@ -4,6 +4,7 @@ import com.app.Post.Post;
 import com.app.User.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +31,6 @@ public class Comment {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
+    @CreationTimestamp
     private LocalDateTime createdAt = LocalDateTime.now();
 }
