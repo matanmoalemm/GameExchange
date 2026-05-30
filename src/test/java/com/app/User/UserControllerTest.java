@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -64,6 +68,10 @@ class UserControllerTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    static Stream<String> invalidNameSizeValues() {
+        return Stream.of("ab", "a".repeat(21));
     }
 
     @Nested
@@ -174,6 +182,45 @@ class UserControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isBadRequest());
+        }
+
+        @ParameterizedTest(name = "name=\"{0}\"")
+        @MethodSource("com.app.User.UserControllerTest#invalidNameSizeValues")
+        @DisplayName("should return 400 when name violates size constraints")
+        void shouldReturn400_WhenNameViolatesSize(String name) throws Exception {
+            UserUpdateDTO dto = new UserUpdateDTO(name, "valid@test.com");
+
+            mockMvc.perform(patch("/api/v1/users/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.name").value("Username must be between 3 and 20 characters"));
+        }
+
+        @ParameterizedTest(name = "name=\"{0}\"")
+        @ValueSource(strings = {"user name", "user@name", "user!"})
+        @DisplayName("should return 400 when name contains invalid characters")
+        void shouldReturn400_WhenNameViolatesPattern(String name) throws Exception {
+            UserUpdateDTO dto = new UserUpdateDTO(name, "valid@test.com");
+
+            mockMvc.perform(patch("/api/v1/users/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.name").value("Username can only contain letters, numbers, dots, and underscores"));
+        }
+
+        @ParameterizedTest(name = "email=\"{0}\"")
+        @ValueSource(strings = {"notvalid", "missingdomainpart@", "@missinglocalpart.com"})
+        @DisplayName("should return 400 when email is invalid")
+        void shouldReturn400_WhenEmailIsInvalid(String email) throws Exception {
+            UserUpdateDTO dto = new UserUpdateDTO("validname", email);
+
+            mockMvc.perform(patch("/api/v1/users/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.email").value("Please provide a valid email address"));
         }
 
         @Test

@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -42,6 +47,18 @@ class PostControllerTest {
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
     private UserPrincipal principal;
+
+    // --- @MethodSource factories (must be static; outer class so nested classes can reference them) ---
+
+    static Stream<String> invalidPostProductNames() {
+        return Stream.of("", "ab", "a".repeat(101));
+    }
+
+    static Stream<String> invalidUpdateProductNames() {
+        return Stream.of("", "ab", "a".repeat(101));
+    }
+
+    // --------------------------------------------------------------------------------------
 
     @BeforeEach
     void setUp() {
@@ -171,28 +188,89 @@ class PostControllerTest {
                     .andExpect(status().isBadRequest());
         }
 
-        @Test
-        @DisplayName("should return 400 when product name is blank")
-        void shouldReturn400_WhenProductNameIsBlank() throws Exception {
-            PostRequest request = new PostRequest("", 50, "http://img.com/img.jpg", "desc");
+        // productName @Size(min=3, max=100) -----------------------------------------------
 
-            mockMvc.perform(post("/api/v1/posts")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.productName").exists());
-        }
-
-        @Test
-        @DisplayName("should return 400 when product name is too short")
-        void shouldReturn400_WhenProductNameIsTooShort() throws Exception {
-            PostRequest request = new PostRequest("ab", 50, "http://img.com/img.jpg", "desc");
+        @ParameterizedTest(name = "productName=\"{0}\"")
+        @MethodSource("com.app.Post.PostControllerTest#invalidPostProductNames")
+        @DisplayName("should return 400 when productName violates @Size constraint")
+        void shouldReturn400_WhenProductNameViolatesSize(String productName) throws Exception {
+            PostRequest request = new PostRequest(productName, 50, "http://img.com/img.jpg", "desc");
 
             mockMvc.perform(post("/api/v1/posts")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.productName").value("Product name must be between 3 and 100 characters"));
+        }
+
+        // price @NotNull + @PositiveOrZero ------------------------------------------------
+
+        @Test
+        @DisplayName("should return 400 when price is null")
+        void shouldReturn400_WhenPriceIsNull() throws Exception {
+            PostRequest request = new PostRequest("GameTitle", null, "http://img.com/img.jpg", "desc");
+
+            mockMvc.perform(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.price").value("Price is required"));
+        }
+
+        @Test
+        @DisplayName("should return 400 when price is negative")
+        void shouldReturn400_WhenPriceIsNegative() throws Exception {
+            PostRequest request = new PostRequest("GameTitle", -1, "http://img.com/img.jpg", "desc");
+
+            mockMvc.perform(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.price").value("Price must be 0 or greater"));
+        }
+
+        // picUrl @NotBlank + @Pattern -------------------------------------------------------
+        // null/empty/"   " → @NotBlank and/or @Pattern both fire; just assert 400
+        // non-blank invalid → only @Pattern fires → assert message
+
+        @ParameterizedTest(name = "picUrl=\"{0}\"")
+        @NullAndEmptySource
+        @ValueSource(strings = {"   "})
+        @DisplayName("should return 400 when picUrl is null, empty, or whitespace")
+        void shouldReturn400_WhenPicUrlIsBlankOrNull(String picUrl) throws Exception {
+            PostRequest request = new PostRequest("GameTitle", 50, picUrl, "desc");
+
+            mockMvc.perform(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @ParameterizedTest(name = "picUrl=\"{0}\"")
+        @ValueSource(strings = {"not-a-url", "www.example.com", "htp://example.com"})
+        @DisplayName("should return 400 when picUrl does not match URL pattern")
+        void shouldReturn400_WhenPicUrlViolatesPattern(String picUrl) throws Exception {
+            PostRequest request = new PostRequest("GameTitle", 50, picUrl, "desc");
+
+            mockMvc.perform(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.picUrl").value("PicUrl must be a valid URL"));
+        }
+
+        // description @Size(max=1000) -------------------------------------------------------
+
+        @Test
+        @DisplayName("should return 400 when description exceeds 1000 characters")
+        void shouldReturn400_WhenDescriptionTooLong() throws Exception {
+            PostRequest request = new PostRequest("GameTitle", 50, "http://img.com/img.jpg", "a".repeat(1001));
+
+            mockMvc.perform(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.description").value("Description cannot exceed 1000 characters"));
         }
 
         @Test
@@ -264,16 +342,78 @@ class PostControllerTest {
                     .andExpect(status().isBadRequest());
         }
 
-        @Test
-        @DisplayName("should return 400 when product name is blank")
-        void shouldReturn400_WhenProductNameIsBlank() throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("", "Desc", 100, "http://img.com/img.jpg", "ACTIVE");
+        // productName @Size(min=3, max=100) ------------------------------------------------
+
+        @ParameterizedTest(name = "productName=\"{0}\"")
+        @MethodSource("com.app.Post.PostControllerTest#invalidUpdateProductNames")
+        @DisplayName("should return 400 when productName violates @Size constraint")
+        void shouldReturn400_WhenProductNameViolatesSize(String productName) throws Exception {
+            PostUpdateDto dto = new PostUpdateDto(productName, "Desc", 100, "http://img.com/img.jpg", "ACTIVE");
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(dto)))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.productName").exists());
+                    .andExpect(jsonPath("$.productName").value("Product name must be between 3 and 100 characters"));
+        }
+
+        // price @PositiveOrZero -----------------------------------------------------------
+
+        @Test
+        @DisplayName("should return 400 when price is negative")
+        void shouldReturn400_WhenPriceIsNegative() throws Exception {
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", -1, "http://img.com/img.jpg", "ACTIVE");
+
+            mockMvc.perform(patch("/api/v1/posts/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.price").value("Price must be 0 or greater"));
+        }
+
+        // picUrl @Pattern ----------------------------------------------------------------
+        // UpdateDto has no @NotBlank on picUrl, so "" triggers only @Pattern
+
+        @ParameterizedTest(name = "picUrl=\"{0}\"")
+        @ValueSource(strings = {"not-a-url", "www.example.com", "", "htp://example.com"})
+        @DisplayName("should return 400 when picUrl does not match URL pattern")
+        void shouldReturn400_WhenPicUrlViolatesPattern(String picUrl) throws Exception {
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, picUrl, "ACTIVE");
+
+            mockMvc.perform(patch("/api/v1/posts/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.picUrl").value("PicUrl must be a valid URL starting with http or https"));
+        }
+
+        // status @Pattern ---------------------------------------------------------------
+
+        @ParameterizedTest(name = "status=\"{0}\"")
+        @ValueSource(strings = {"INVALID", "active", "PENDING_STATUS", "sold"})
+        @DisplayName("should return 400 when status is not a valid enum value")
+        void shouldReturn400_WhenStatusIsInvalid(String status) throws Exception {
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, "http://img.com/img.jpg", status);
+
+            mockMvc.perform(patch("/api/v1/posts/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("Invalid status. Must be ACTIVE, PENDING, SOLD, or DELETED"));
+        }
+
+        // description @Size(max=1000) ---------------------------------------------------
+
+        @Test
+        @DisplayName("should return 400 when description exceeds 1000 characters")
+        void shouldReturn400_WhenDescriptionTooLong() throws Exception {
+            PostUpdateDto dto = new PostUpdateDto("Name", "a".repeat(1001), 100, "http://img.com/img.jpg", "ACTIVE");
+
+            mockMvc.perform(patch("/api/v1/posts/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.description").value("Description cannot exceed 1000 characters"));
         }
 
         @Test

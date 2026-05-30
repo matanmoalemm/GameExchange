@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
-public class PostControllerFullIntegrationTest {
+public class PostFullIntegrationTest {
 
     @Autowired
     private RestTestClient restTestClient;
@@ -59,10 +59,6 @@ public class PostControllerFullIntegrationTest {
         otherUser = userRepository.save(other);
         otherToken = generateToken(otherUser);
     }
-
-    // =========================
-    // POST /api/v1/posts
-    // =========================
     @Test
     void shouldCreatePost() {
         PostRequest request = new PostRequest(
@@ -87,28 +83,6 @@ public class PostControllerFullIntegrationTest {
                 });
     }
 
-    @Test
-    void shouldNotCreatePostWhenValidationFails() {
-        PostRequest request = new PostRequest(
-                "ab",            // too short — @Size min=3
-                -1,              // negative — @PositiveOrZero
-                "not-a-url",     // invalid — @Pattern
-                "a".repeat(1001) // too long — @Size max=1000
-        );
-
-        restTestClient.post()
-                .uri("/api/v1/posts")
-                .header("Authorization", "Bearer " + testToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.productName").isEqualTo("Product name must be between 3 and 100 characters")
-                .jsonPath("$.price").isEqualTo("Price must be 0 or greater")
-                .jsonPath("$.picUrl").isEqualTo("PicUrl must be a valid URL")
-                .jsonPath("$.description").isEqualTo("Description cannot exceed 1000 characters");
-    }
 
     @Test
     void shouldReturn401WhenCreatingPostWithoutToken() {

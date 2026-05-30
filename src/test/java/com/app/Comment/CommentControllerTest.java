@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -144,16 +147,30 @@ class CommentControllerTest {
                     .andExpect(status().isBadRequest());
         }
 
-        @Test
-        @DisplayName("should return 400 when comment text is blank")
-        void shouldReturn400_WhenTextIsBlank() throws Exception {
-            CommentRequest request = new CommentRequest(1L, "");
+        @ParameterizedTest(name = "text=\"{0}\"")
+        @NullAndEmptySource
+        @ValueSource(strings = {"   "})
+        @DisplayName("should return 400 when comment text is null, empty, or whitespace-only")
+        void shouldReturn400_WhenTextIsBlankOrNull(String text) throws Exception {
+            CommentRequest request = new CommentRequest(1L, text);
 
             mockMvc.perform(post("/api/v1/comments")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.text").value("Comment text is required"));
+        }
+
+        @Test
+        @DisplayName("should return 400 when comment text exceeds 1000 characters")
+        void shouldReturn400_WhenTextExceedsMaxLength() throws Exception {
+            CommentRequest request = new CommentRequest(1L, "a".repeat(1001));
+
+            mockMvc.perform(post("/api/v1/comments")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.text").value("Comment cannot exceed 1000 characters"));
         }
 
         @Test
