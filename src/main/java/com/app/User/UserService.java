@@ -1,6 +1,5 @@
-package com.app.user;
+package com.app.User;
 
-import com.app.Post.PostMapper;
 import com.app.Post.PostResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -12,13 +11,11 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final PostMapper postMapper;
     private final UserLookupService userLookupService;
 
-    public UserService(UserRepository userRepository, UserMapper userMapper, PostMapper postMapper, UserLookupService userLookupService) {
+    public UserService(UserRepository userRepository, UserMapper userMapper, UserLookupService userLookupService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
-        this.postMapper = postMapper;
         this.userLookupService = userLookupService;
     }
 

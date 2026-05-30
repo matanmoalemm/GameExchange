@@ -1,4 +1,4 @@
-package com.app.user;
+package com.app.User;
 
 public record UserResponse(Long id, String name) {
 }

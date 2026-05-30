@@ -1,6 +1,6 @@
 package com.app.Post;
 
-import com.app.user.User;
+import com.app.User.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

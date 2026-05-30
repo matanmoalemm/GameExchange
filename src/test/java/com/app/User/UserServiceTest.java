@@ -3,7 +3,6 @@ package com.app.User;
 import com.app.Post.Post;
 import com.app.Post.PostMapper;
 import com.app.Post.PostResponse;
-import com.app.user.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

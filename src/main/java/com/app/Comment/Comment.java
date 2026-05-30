@@ -1,7 +1,7 @@
 package com.app.Comment;
 
 import com.app.Post.Post;
-import com.app.user.User;
+import com.app.User.User;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.app.user;
+package com.app.User;
 
 import org.springframework.stereotype.Service;
 import java.util.NoSuchElementException;

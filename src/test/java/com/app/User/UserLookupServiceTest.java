@@ -1,8 +1,5 @@
 package com.app.User;
 
-import com.app.user.User;
-import com.app.user.UserLookupService;
-import com.app.user.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

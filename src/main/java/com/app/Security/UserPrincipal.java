@@ -1,6 +1,6 @@
 package com.app.Security;
 
-import com.app.user.User;
+import com.app.User.User;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;

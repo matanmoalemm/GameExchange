@@ -1,4 +1,4 @@
-package com.app.user;
+package com.app.User;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;

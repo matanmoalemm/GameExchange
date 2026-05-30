@@ -1,13 +1,10 @@
 package com.app.Comment;
-
-import com.app.Post.Post;
-import com.app.Post.PostRepository;
+import com.app.Post.PostLookUpService;
 import com.app.Security.UserPrincipal;
-import com.app.user.UserRepository;
+import com.app.User.UserLookupService;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -15,22 +12,22 @@ import java.util.NoSuchElementException;
 @Service
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final UserRepository userRepository;
-    private final PostRepository postRepository;
+    private final UserLookupService userLookupService;
+    private final PostLookUpService postLookUpService;
     private final CommentMapper commentMapper;
 
     public CommentService(CommentRepository commentRepository,
-                          UserRepository userRepository,
-                          PostRepository postRepository,
+                          UserLookupService userLookupService,
+                          PostLookUpService postLookUpService,
                           CommentMapper commentMapper) {
         this.commentRepository = commentRepository;
-        this.userRepository = userRepository;
-        this.postRepository = postRepository;
+        this.userLookupService = userLookupService;
+        this.postLookUpService = postLookUpService;
         this.commentMapper = commentMapper;
     }
 
     public List<CommentResponse> getCommentsByPostId(Long postId) {
-        Post post = getPostById(postId);
+        postLookUpService.getPostById(postId);
         return commentRepository.findByPostId(postId).stream()
                 .map(commentMapper::toResponse)
                 .toList();
@@ -39,9 +36,8 @@ public class CommentService {
     @Transactional
     public CommentResponse insertComment(CommentRequest request, UserPrincipal principal) {
         Comment comment = new Comment();
-        comment.setUser(userRepository.findById(principal.getId())
-                .orElseThrow(() -> new NoSuchElementException("User not found")));
-        comment.setPost(getPostById(request.postId()));
+        comment.setUser(userLookupService.getById(principal.getId()));
+        comment.setPost(postLookUpService.getPostById(request.postId()));
         comment.setText(request.text());
         return commentMapper.toResponse(commentRepository.save(comment));
     }
@@ -54,10 +50,5 @@ public class CommentService {
             throw new AccessDeniedException("You do not own this comment");
         }
         commentRepository.deleteById(id);
-    }
-
-    private Post getPostById(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId));
     }
 }

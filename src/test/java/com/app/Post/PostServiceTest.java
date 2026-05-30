@@ -1,8 +1,8 @@
 package com.app.Post;
 
 import com.app.Security.UserPrincipal;
-import com.app.user.User;
-import com.app.user.UserLookupService;
+import com.app.User.User;
+import com.app.User.UserLookupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,6 @@ import org.springframework.security.access.AccessDeniedException;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -26,6 +25,9 @@ class PostServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private PostLookUpService postLookUpService;
 
     @Mock
     private UserLookupService userLookupService;
@@ -91,18 +93,18 @@ class PostServiceTest {
         @DisplayName("should return post when valid ID is provided")
         void shouldReturnPost_WhenValidIdProvided() {
             Post post = new Post();
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             Post result = postService.getPostById(1L);
 
             assertSame(post, result);
-            verify(postRepository).findById(1L);
+            verify(postLookUpService).getPostById(1L);
         }
 
         @Test
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
 
             assertThrows(NoSuchElementException.class, () -> postService.getPostById(1L));
         }
@@ -110,8 +112,10 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when ID is null")
         void shouldThrow_WhenIdIsNull() {
+            when(postLookUpService.getPostById(null)).thenThrow(new NoSuchElementException("Post not found"));
+
             assertThrows(NoSuchElementException.class, () -> postService.getPostById(null));
-            verify(postRepository).findById(null);
+            verify(postLookUpService).getPostById(null);
         }
     }
 
@@ -125,20 +129,20 @@ class PostServiceTest {
             Post post = new Post();
             PostResponse response = mock(PostResponse.class);
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
             when(postMapper.toResponse(post)).thenReturn(response);
 
             PostResponse result = postService.getPostResponseById(1L);
 
             assertSame(response, result);
-            verify(postRepository).findById(1L);
+            verify(postLookUpService).getPostById(1L);
             verify(postMapper).toResponse(post);
         }
 
         @Test
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
 
             assertThrows(NoSuchElementException.class, () -> postService.getPostResponseById(1L));
         }
@@ -146,6 +150,8 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when ID is null")
         void shouldThrow_WhenIdIsNull() {
+            when(postLookUpService.getPostById(null)).thenThrow(new NoSuchElementException("Post not found"));
+
             assertThrows(NoSuchElementException.class, () -> postService.getPostResponseById(null));
         }
     }
@@ -238,7 +244,7 @@ class PostServiceTest {
             Post post = new Post();
             post.setUser(owner);
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             postService.deletePostById(1L, 1L);
 
@@ -248,7 +254,7 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
 
             assertThrows(NoSuchElementException.class, () -> postService.deletePostById(1L, 1L));
             verify(postRepository, never()).deleteById(any());
@@ -262,7 +268,7 @@ class PostServiceTest {
             Post post = new Post();
             post.setUser(owner);
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             assertThrows(AccessDeniedException.class, () -> postService.deletePostById(1L, 1L));
             verify(postRepository, never()).deleteById(any());
@@ -271,6 +277,8 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when ID is null")
         void shouldThrow_WhenIdIsNull() {
+            when(postLookUpService.getPostById(null)).thenThrow(new NoSuchElementException("Post not found"));
+
             assertThrows(NoSuchElementException.class, () -> postService.deletePostById(null, 1L));
         }
     }
@@ -288,7 +296,7 @@ class PostServiceTest {
             post.setUser(owner);
             PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             postService.updatePostFromDto(1L, dto, 1L);
 
@@ -298,7 +306,7 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
             PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
 
             assertThrows(NoSuchElementException.class, () -> postService.updatePostFromDto(1L, dto, 1L));
@@ -314,7 +322,7 @@ class PostServiceTest {
             post.setUser(owner);
             PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             assertThrows(AccessDeniedException.class, () -> postService.updatePostFromDto(1L, dto, 1L));
             verify(postMapper, never()).updatePostFromDto(any(), any());
@@ -323,6 +331,7 @@ class PostServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when ID is null")
         void shouldThrow_WhenIdIsNull() {
+            when(postLookUpService.getPostById(null)).thenThrow(new NoSuchElementException("Post not found"));
             PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
 
             assertThrows(NoSuchElementException.class, () -> postService.updatePostFromDto(null, dto, 1L));
@@ -337,7 +346,7 @@ class PostServiceTest {
             post.setUser(owner);
             PostUpdateDto dto = new PostUpdateDto(null, null, null, null, null);
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
 
             postService.updatePostFromDto(1L, dto, 1L);
 

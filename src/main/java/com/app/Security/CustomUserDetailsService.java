@@ -1,7 +1,7 @@
 package com.app.Security;
 
-import com.app.user.User;
-import com.app.user.UserRepository;
+import com.app.User.User;
+import com.app.User.UserRepository;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

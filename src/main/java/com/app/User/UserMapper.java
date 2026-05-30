@@ -1,4 +1,4 @@
-package com.app.user;
+package com.app.User;
 
 import com.app.Post.Post;
 import com.app.Post.PostMapper;

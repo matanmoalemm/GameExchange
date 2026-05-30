@@ -1,10 +1,10 @@
 package com.app.Comment;
 
 import com.app.Post.Post;
-import com.app.Post.PostRepository;
+import com.app.Post.PostLookUpService;
 import com.app.Security.UserPrincipal;
-import com.app.user.User;
-import com.app.user.UserRepository;
+import com.app.User.User;
+import com.app.User.UserLookupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,10 +32,10 @@ class CommentServiceTest {
     private CommentRepository commentRepository;
 
     @Mock
-    private UserRepository userRepository;
+    private UserLookupService userLookupService;
 
     @Mock
-    private PostRepository postRepository;
+    private PostLookUpService postLookUpService;
 
     @Mock
     private CommentMapper commentMapper;
@@ -48,21 +48,17 @@ class CommentServiceTest {
     class GetCommentsByPostId {
 
         @Test
-        @DisplayName("should return comments when requester is the post owner")
-        void shouldReturnComments_WhenRequesterIsPostOwner() {
-            User postOwner = new User();
-            postOwner.setId(1L);
+        @DisplayName("should return comments when post exists")
+        void shouldReturnComments_WhenPostExists() {
             Post post = new Post();
-            post.setId(1L);
-            post.setUser(postOwner);
             Comment comment = new Comment();
             CommentResponse response = new CommentResponse(1L, "Nice!", 1L, 2L, LocalDateTime.now());
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
             when(commentRepository.findByPostId(1L)).thenReturn(List.of(comment));
             when(commentMapper.toResponse(comment)).thenReturn(response);
 
-            List<CommentResponse> result = commentService.getCommentsByPostId(1L, 1L);
+            List<CommentResponse> result = commentService.getCommentsByPostId(1L);
 
             assertEquals(1, result.size());
             assertSame(response, result.get(0));
@@ -71,15 +67,12 @@ class CommentServiceTest {
         @Test
         @DisplayName("should return empty list when post has no comments")
         void shouldReturnEmptyList_WhenPostHasNoComments() {
-            User postOwner = new User();
-            postOwner.setId(1L);
             Post post = new Post();
-            post.setUser(postOwner);
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
             when(commentRepository.findByPostId(1L)).thenReturn(List.of());
 
-            List<CommentResponse> result = commentService.getCommentsByPostId(1L, 1L);
+            List<CommentResponse> result = commentService.getCommentsByPostId(1L);
 
             assertTrue(result.isEmpty());
             verify(commentMapper, never()).toResponse(any());
@@ -88,41 +81,39 @@ class CommentServiceTest {
         @Test
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
 
-            assertThrows(NoSuchElementException.class, () -> commentService.getCommentsByPostId(1L, 1L));
+            assertThrows(NoSuchElementException.class, () -> commentService.getCommentsByPostId(1L));
             verify(commentRepository, never()).findByPostId(any());
         }
 
-
         @Test
-        @DisplayName("should throw AccessDeniedException when requester is not the post owner")
-        void shouldThrow_WhenRequesterIsNotPostOwner() {
-            User postOwner = new User();
-            postOwner.setId(2L);
+        @DisplayName("should return comments for any authenticated user — no ownership check")
+        void shouldReturnComments_WhenUserIsNotPostOwner() {
             Post post = new Post();
-            post.setUser(postOwner);
+            Comment comment = new Comment();
+            CommentResponse response = new CommentResponse(1L, "Nice!", 1L, 2L, LocalDateTime.now());
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
+            when(commentRepository.findByPostId(1L)).thenReturn(List.of(comment));
+            when(commentMapper.toResponse(comment)).thenReturn(response);
 
-            assertThrows(AccessDeniedException.class, () -> commentService.getCommentsByPostId(1L, 1L));
-            verify(commentRepository, never()).findByPostId(any());
+            List<CommentResponse> result = commentService.getCommentsByPostId(1L);
+
+            assertEquals(1, result.size());
         }
 
         @Test
         @DisplayName("should handle large number of comments without degradation")
         void shouldHandleLargeNumberOfComments() {
-            User postOwner = new User();
-            postOwner.setId(1L);
             Post post = new Post();
-            post.setUser(postOwner);
             List<Comment> comments = Collections.nCopies(1000, new Comment());
 
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
             when(commentRepository.findByPostId(1L)).thenReturn(comments);
             when(commentMapper.toResponse(any())).thenReturn(mock(CommentResponse.class));
 
-            List<CommentResponse> result = commentService.getCommentsByPostId(1L, 1L);
+            List<CommentResponse> result = commentService.getCommentsByPostId(1L);
 
             assertEquals(1000, result.size());
             verify(commentMapper, times(1000)).toResponse(any());
@@ -143,8 +134,8 @@ class CommentServiceTest {
             Post post = new Post();
             post.setId(1L);
 
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(postLookUpService.getPostById(1L)).thenReturn(post);
             when(commentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(commentMapper.toResponse(any())).thenReturn(mock(CommentResponse.class));
 
@@ -163,7 +154,7 @@ class CommentServiceTest {
             CommentRequest request = new CommentRequest(1L, "Nice!");
 
             assertThrows(NullPointerException.class, () -> commentService.insertComment(request, null));
-            verify(userRepository, never()).findById(any());
+            verify(userLookupService, never()).getById(any());
         }
 
         @Test
@@ -172,7 +163,7 @@ class CommentServiceTest {
             UserPrincipal principal = new UserPrincipal(1L, "user@test.com", List.of());
             User user = new User();
 
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userLookupService.getById(1L)).thenReturn(user);
 
             assertThrows(NullPointerException.class, () -> commentService.insertComment(null, principal));
             verify(commentRepository, never()).save(any());
@@ -184,10 +175,10 @@ class CommentServiceTest {
             CommentRequest request = new CommentRequest(1L, "Nice!");
             UserPrincipal principal = new UserPrincipal(1L, "user@test.com", List.of());
 
-            when(userRepository.findById(1L)).thenReturn(Optional.empty());
+            when(userLookupService.getById(1L)).thenThrow(new NoSuchElementException("User not found"));
 
             assertThrows(NoSuchElementException.class, () -> commentService.insertComment(request, principal));
-            verify(postRepository, never()).findById(any());
+            verify(postLookUpService, never()).getPostById(any());
             verify(commentRepository, never()).save(any());
         }
 
@@ -198,8 +189,8 @@ class CommentServiceTest {
             UserPrincipal principal = new UserPrincipal(1L, "user@test.com", List.of());
             User user = new User();
 
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(postRepository.findById(1L)).thenReturn(Optional.empty());
+            when(userLookupService.getById(1L)).thenReturn(user);
+            when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
 
             assertThrows(NoSuchElementException.class, () -> commentService.insertComment(request, principal));
             verify(commentRepository, never()).save(any());

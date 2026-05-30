@@ -5,7 +5,6 @@ import com.app.Post.Post;
 import com.app.Post.PostRepository;
 import com.app.Security.JwtUtils;
 import com.app.Security.UserPrincipal;
-import com.app.user.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,24 +1,25 @@
 package com.app.Post;
 
 import com.app.Security.UserPrincipal;
-import com.app.user.User;
-import com.app.user.UserLookupService;
+import com.app.User.UserLookupService;
 import jakarta.transaction.Transactional;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 
 @Service
 public class PostService {
     private final PostRepository postRepository;
+    private final PostLookUpService postLookUpService;
     private final UserLookupService userLookupService;
     private final PostMapper postMapper;
 
-    public PostService(PostRepository postRepository, UserLookupService userLookupService, PostMapper postMapper) {
+    public PostService(PostRepository postRepository, PostLookUpService postLookUpService,
+                       UserLookupService userLookupService, PostMapper postMapper) {
         this.postRepository = postRepository;
+        this.postLookUpService = postLookUpService;
         this.userLookupService = userLookupService;
         this.postMapper = postMapper;
     }
@@ -30,9 +31,7 @@ public class PostService {
     }
 
     public Post getPostById(Long id) {
-        return postRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("Post not found")
-        );
+        return postLookUpService.getPostById(id);
     }
 
     public PostResponse getPostResponseById(Long id) {
