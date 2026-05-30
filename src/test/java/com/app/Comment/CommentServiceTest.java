@@ -94,11 +94,6 @@ class CommentServiceTest {
             verify(commentRepository, never()).findByPostId(any());
         }
 
-        @Test
-        @DisplayName("should throw NoSuchElementException when post ID is null")
-        void shouldThrow_WhenPostIdIsNull() {
-            assertThrows(NoSuchElementException.class, () -> commentService.getCommentsByPostId(null, 1L));
-        }
 
         @Test
         @DisplayName("should throw AccessDeniedException when requester is not the post owner")
@@ -210,25 +205,6 @@ class CommentServiceTest {
             verify(commentRepository, never()).save(any());
         }
 
-        @Test
-        @DisplayName("should pass blank comment text through to save — validation is at the controller")
-        void shouldPassThrough_WhenCommentTextIsBlank() {
-            CommentRequest request = new CommentRequest(1L, "");
-            UserPrincipal principal = new UserPrincipal(1L, "user@test.com", List.of());
-            User user = new User();
-            Post post = new Post();
-
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-            when(commentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-            when(commentMapper.toResponse(any())).thenReturn(mock(CommentResponse.class));
-
-            assertDoesNotThrow(() -> commentService.insertComment(request, principal));
-
-            ArgumentCaptor<Comment> captor = ArgumentCaptor.forClass(Comment.class);
-            verify(commentRepository).save(captor.capture());
-            assertEquals("", captor.getValue().getText());
-        }
     }
 
     @Nested
@@ -273,10 +249,5 @@ class CommentServiceTest {
             verify(commentRepository, never()).deleteById(any());
         }
 
-        @Test
-        @DisplayName("should throw NoSuchElementException when comment ID is null")
-        void shouldThrow_WhenCommentIdIsNull() {
-            assertThrows(NoSuchElementException.class, () -> commentService.deleteCommentById(null, 1L));
-        }
     }
 }

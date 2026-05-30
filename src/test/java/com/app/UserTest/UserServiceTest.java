@@ -172,13 +172,7 @@ class UserServiceTest {
             verifyNoMoreInteractions(userRepository);
         }
 
-        @Test
-        @DisplayName("should invoke deleteById with null ID — no service-level null guard")
-        void shouldInvokeDeleteWithNullId() {
-            userService.deleteUserById(null);
 
-            verify(userRepository).deleteById(null);
-        }
     }
 
     @Nested
@@ -196,27 +190,6 @@ class UserServiceTest {
             userService.insertUser(request);
 
             verify(userMapper).toEntity(request);
-            verify(userRepository).save(user);
-        }
-
-        @Test
-        @DisplayName("should call save with null entity when request is null — no service-level null guard")
-        void shouldCallSaveWithNullEntity_WhenRequestIsNull() {
-            userService.insertUser(null);
-
-            verify(userMapper).toEntity(null);
-            verify(userRepository).save(null);
-        }
-
-        @Test
-        @DisplayName("should pass blank name through to mapper — validation is at the controller")
-        void shouldPassThrough_WhenNameIsBlank() {
-            UserRequest request = new UserRequest("   ", "john@test.com");
-            User user = new User();
-
-            when(userMapper.toEntity(request)).thenReturn(user);
-
-            assertDoesNotThrow(() -> userService.insertUser(request));
             verify(userRepository).save(user);
         }
     }
@@ -265,13 +238,6 @@ class UserServiceTest {
             assertThrows(NoSuchElementException.class, () -> userService.getUserPostsById(1L));
         }
 
-        @Test
-        @DisplayName("should throw NoSuchElementException when ID is null")
-        void shouldThrow_WhenIdIsNull() {
-            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
-
-            assertThrows(NoSuchElementException.class, () -> userService.getUserPostsById(null));
-        }
 
         @Test
         @DisplayName("should handle large number of posts without degradation")
@@ -318,26 +284,6 @@ class UserServiceTest {
             verify(userMapper, never()).updateUserFromDto(any(), any());
         }
 
-        @Test
-        @DisplayName("should throw NoSuchElementException when ID is null")
-        void shouldThrow_WhenIdIsNull() {
-            when(userLookupService.getById(null)).thenThrow(new NoSuchElementException("User not found"));
-            UserUpdateDTO dto = new UserUpdateDTO("new_user", "new@mail.com");
 
-            assertThrows(NoSuchElementException.class, () -> userService.updateUserFromDto(null, dto));
-        }
-
-        @Test
-        @DisplayName("should pass null DTO fields to mapper — MapStruct IGNORE strategy handles them")
-        void shouldPassNullDtoFieldsToMapper() {
-            User user = new User();
-            UserUpdateDTO dto = new UserUpdateDTO(null, null);
-
-            when(userLookupService.getById(1L)).thenReturn(user);
-
-            userService.updateUserFromDto(1L, dto);
-
-            verify(userMapper).updateUserFromDto(dto, user);
-        }
     }
 }

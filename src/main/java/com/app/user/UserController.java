@@ -19,7 +19,6 @@ public class UserController {
         this.userService = userService;
     }
 
-// --- Private Endpoints (Actions on the authenticated user) ---
 
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
