@@ -1,4 +1,4 @@
-package com.app.UserTest;
+package com.app.User;
 
 import com.app.user.User;
 import com.app.user.UserLookupService;

@@ -29,11 +29,8 @@ public class CommentService {
         this.commentMapper = commentMapper;
     }
 
-    public List<CommentResponse> getCommentsByPostId(Long postId, Long requesterId) {
+    public List<CommentResponse> getCommentsByPostId(Long postId) {
         Post post = getPostById(postId);
-        if (!post.getUser().getId().equals(requesterId)) {
-            throw new AccessDeniedException("Only the post owner can view comments");
-        }
         return commentRepository.findByPostId(postId).stream()
                 .map(commentMapper::toResponse)
                 .toList();

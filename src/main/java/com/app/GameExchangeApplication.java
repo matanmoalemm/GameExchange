@@ -13,7 +13,4 @@ public class GameExchangeApplication {
         SpringApplication.run(GameExchangeApplication.class, args);
     }
 
-    @GetMapping
-    public String Hi(){ return "main path";}
-
 }

@@ -22,7 +22,7 @@ public class CommentController {
     @ResponseStatus(HttpStatus.OK)
     public List<CommentResponse> getCommentsByPost(@AuthenticationPrincipal UserPrincipal principal,
                                                    @PathVariable Long postId) {
-        return commentService.getCommentsByPostId(postId, principal.getId());
+        return commentService.getCommentsByPostId(postId);
     }
 
     @PostMapping

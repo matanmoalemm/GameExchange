@@ -1,4 +1,4 @@
-package com.app.UserTest;
+package com.app.User;
 
 import com.app.Comment.CommentRepository;
 import com.app.Post.Post;

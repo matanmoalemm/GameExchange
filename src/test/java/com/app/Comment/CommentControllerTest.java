@@ -70,10 +70,10 @@ class CommentControllerTest {
     class GetCommentsByPost {
 
         @Test
-        @DisplayName("should return 200 with list of comments when requester is post owner")
-        void shouldReturn200WithComments_WhenOwner() throws Exception {
+        @DisplayName("should return 200 with list of comments when requester is authorised")
+        void shouldReturn200WithComments_WhenAuth() throws Exception {
             CommentResponse response = new CommentResponse(1L, "Nice game!", 1L, 1L, LocalDateTime.now());
-            when(commentService.getCommentsByPostId(1L, 1L)).thenReturn(List.of(response));
+            when(commentService.getCommentsByPostId(1L)).thenReturn(List.of(response));
 
             mockMvc.perform(get("/api/v1/comments/post/1"))
                     .andExpect(status().isOk())
@@ -84,7 +84,7 @@ class CommentControllerTest {
         @Test
         @DisplayName("should return 200 with empty list when post has no comments")
         void shouldReturn200WithEmptyList_WhenNoComments() throws Exception {
-            when(commentService.getCommentsByPostId(1L, 1L)).thenReturn(List.of());
+            when(commentService.getCommentsByPostId(1L)).thenReturn(List.of());
 
             mockMvc.perform(get("/api/v1/comments/post/1"))
                     .andExpect(status().isOk())
@@ -94,7 +94,7 @@ class CommentControllerTest {
         @Test
         @DisplayName("should return 404 when post is not found")
         void shouldReturn404_WhenPostNotFound() throws Exception {
-            when(commentService.getCommentsByPostId(99L, 1L)).thenThrow(new NoSuchElementException("Post not found"));
+            when(commentService.getCommentsByPostId(99L)).thenThrow(new NoSuchElementException("Post not found"));
 
             mockMvc.perform(get("/api/v1/comments/post/99"))
                     .andExpect(status().isNotFound());

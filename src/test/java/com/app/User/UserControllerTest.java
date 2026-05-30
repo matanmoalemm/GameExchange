@@ -1,8 +1,12 @@
-package com.app.user;
+package com.app.User;
 
 import com.app.ControllerExceptionHandler;
 import com.app.Post.PostResponse;
 import com.app.Security.UserPrincipal;
+import com.app.user.UserController;
+import com.app.user.UserResponse;
+import com.app.user.UserService;
+import com.app.user.UserUpdateDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
