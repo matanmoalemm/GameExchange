@@ -54,7 +54,7 @@ jobs:
           context: .
           dockerfile: Dockerfile
           push: false
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:$(date-'%Y%m%d%H%M%S')
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:latest
 
 
       - name: Login to Docker Hub
@@ -70,4 +70,4 @@ jobs:
           context: .
           dockerfile: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:$(date-'%Y%m%d%H%M%S')
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:latest
