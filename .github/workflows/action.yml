@@ -35,6 +35,9 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       #Testing
       - name: Tests
         run: ./mvnw clean test --file pom.xml
