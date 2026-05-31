@@ -47,22 +47,27 @@ jobs:
         run: |
           ./mvnw clean
           ./mvnw -B package --file pom.xml -DskipTests
-#
-#      - name: Login to Docker Hub
-#        uses: docker/login-action@v3
-#        with:
-#          username: ${{ secrets.DOCKERHUB_USERNAME }}
-#          password: ${{ secrets.DOCKERHUB_TOKEN }}
-#
-#      - name: Build Docker Image
-#        run:
-#          IMAGE_NAME=mathew177/game-exchange-backend
-#          IMAGE_TAG=${{ github.sha }}
-#          docker build -t $IMAGE_NAME:$IMAGE_TAG -t $IMAGE_NAME:latest
-#
-#      - name: Push Docker Image
-#        run:
-#          IMAGE_NAME=mathew177/game-exchange-backend
-#          IMAGE_TAG=${{ github.sha }}
-#          docker push -t $IMAGE_NAME:$IMAGE_TAG
-#          docker push $IMAGE_NAME:lastest
+
+      - name: Build Docker Image
+        uses: actions/build-push-action@v2
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:$(date-'%Y-%m-%d%H-%M-%S')
+
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+      - name: Push Docker Image
+        uses: actions/build-push-action@v2
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/GameXchange:$(date-'%Y-%m-%d%H-%M-%S')

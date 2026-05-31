@@ -18,20 +18,6 @@ COPY --from=build /build/target/Game_Exchange-*.jar /app/
 EXPOSE 8080
 
 ENV JAR_VERSION=${APP_VERSION}
-ENV EMAIL_HOSTNAME=missing_host_name
-ENV EMAIL_USER_NAME=missing_host_name
-ENV EMAIL_PASSWORD=missing_host_name
-
 
 
 CMD java -jar Game_Exchange-${JAR_VERSION}.jar
-
-
-
-
-
-#FROM eclipse-temurin:21-jdk
-#COPY target/*.jar app.jar
-#ADD target/Game_Exchange-0.0.1-SNAPSHOT.jar Game_Exchange-0.0.1-SNAPSHOT.jar
-#EXPOSE 8080
-#ENTRYPOINT ["java", "-jar", "/app.jar"]
