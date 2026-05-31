@@ -18,6 +18,11 @@ COPY --from=build /build/target/Game_Exchange-*.jar /app/
 EXPOSE 8080
 
 ENV JAR_VERSION=${APP_VERSION}
+ENV EMAIL_HOSTNAME=missing_host_name
+ENV EMAIL_USER_NAME=missing_host_name
+ENV EMAIL_PASSWORD=missing_host_name
+
+
 
 CMD java -jar Game_Exchange-${JAR_VERSION}.jar
 
