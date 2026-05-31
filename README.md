@@ -233,9 +233,9 @@ The project uses a **two-tier testing strategy** that balances speed with confid
 
 | Class | Type | Covers |
 |---|---|---|
-| `UserControllerFullIntegrationTest` | Integration | User REST API |
-| `PostControllerFullIntegrationTest` | Integration | Post REST API |
-| `CommentControllerIntegrationTest` | Integration | Comment REST API |
+| `UserIntegrationTest` | Integration | User REST API |
+| `PostIntegrationTest` | Integration | Post REST API |
+| `CommentIntegrationTest` | Integration | Comment REST API |
 | `UserServiceTest` | Unit | UserService business logic |
 | `PostServiceTest` | Unit | PostService business logic |
 | `CommentServiceTest` | Unit | CommentService business logic |
