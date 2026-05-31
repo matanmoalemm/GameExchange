@@ -1,6 +1,8 @@
 User Intent: Refactor and expand the Integration Test suite for all entity classes in the project.
 
-Please update the integration tests : ["" for each entity according to the following technical requirements and scenarios:
+Please update the integration tests :
+["src/test/java/com/app/User/UserIntegrationTest.java","src/test/java/com/app/Post/PostIntegrationTest.java", "src/test/java/com/app/Comment/CommentIntegrationTest.java" ]
+for each entity according to the following technical requirements and scenarios:
 
 ### 1. High-Performance & Concurrency Scenarios
 Implement high-throughput integration tests to verify system stability, data consistency, and performance under load.

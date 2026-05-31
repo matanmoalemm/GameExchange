@@ -10,6 +10,11 @@ import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -171,6 +176,66 @@ class CommentIntegrationTest extends BaseIntegrationTest {
 
             Post unchanged = postRepository.findById(post.getId()).orElseThrow();
             assertEquals("Original Title", unchanged.getProductName());
+        }
+    }
+
+    @Nested
+    @DisplayName("High-Throughput Scenarios")
+    class HighThroughputScenarios {
+
+        @Test
+        @DisplayName("325 concurrent comment reads and writes produce no 5xx errors")
+        void shouldHandleConcurrentCommentLoad_WithoutServerErrors() throws Exception {
+            int userCount = 10;
+            User[] users = new User[userCount];
+            String[] tokens = new String[userCount];
+            User postOwner = createUser("owner@test.com", "owner");
+            Post sharedPost = createPost(postOwner, "Shared Game", 50);
+            final long postId = sharedPost.getId();
+
+            for (int i = 0; i < userCount; i++) {
+                users[i] = createUser("commenter" + i + "@test.com", "commenter" + i);
+                tokens[i] = tokenFor(users[i]);
+            }
+
+            ExecutorService pool = Executors.newFixedThreadPool(userCount);
+            List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+            // 200 concurrent reads of the shared post's comment list
+            for (int i = 0; i < 200; i++) {
+                final String token = tokens[i % userCount];
+                futures.add(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return mockMvc.perform(get("/api/v1/comments/post/" + postId)
+                                        .header("Authorization", "Bearer " + token))
+                                .andReturn().getResponse().getStatus();
+                    } catch (Exception e) { return 500; }
+                }, pool));
+            }
+
+            // 125 concurrent comment creates — each user writes their own comment on the shared post
+            for (int i = 0; i < 125; i++) {
+                final String token = tokens[i % userCount];
+                final String body = "{\"postId\":" + postId + ",\"text\":\"concurrent comment " + i + "\"}";
+                futures.add(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return mockMvc.perform(post("/api/v1/comments")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(body))
+                                .andReturn().getResponse().getStatus();
+                    } catch (Exception e) { return 500; }
+                }, pool));
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            pool.shutdown();
+
+            List<Integer> statuses = futures.stream().map(f -> f.getNow(-1)).toList();
+            assertThat(statuses).doesNotContain(500);
+            assertThat(statuses.subList(0, 200)).allMatch(s -> s == 200);
+            assertThat(statuses.subList(200, 325)).allMatch(s -> s == 201);
+            assertThat(commentRepository.count()).isGreaterThanOrEqualTo(125);
         }
     }
 }

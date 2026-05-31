@@ -8,6 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -139,6 +146,22 @@ class UserIntegrationTest extends BaseIntegrationTest {
             assertEquals("originalname", updated.getUsername());
             assertEquals("updated@test.com", updated.getEmail());
         }
+
+        @Test
+        @DisplayName("PATCH with all-null body — entity unchanged (no-op)")
+        void shouldBeNoOp_WhenAllFieldsNull() throws Exception {
+            User user = createUser("original@test.com", "originalname");
+            UserUpdateDTO dto = new UserUpdateDTO(null, null);
+
+            mockMvc.perform(withToken(patch("/api/v1/users/me")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto)), user))
+                    .andExpect(status().isNoContent());
+
+            User unchanged = userRepository.findById(user.getId()).orElseThrow();
+            assertEquals("originalname", unchanged.getUsername());
+            assertEquals("original@test.com", unchanged.getEmail());
+        }
     }
 
     @Nested
@@ -155,6 +178,60 @@ class UserIntegrationTest extends BaseIntegrationTest {
             user2.setUsername("user2");
 
             assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user2));
+        }
+    }
+
+    @Nested
+    @DisplayName("High-Throughput Scenarios")
+    class HighThroughputScenarios {
+
+        @Test
+        @DisplayName("140 concurrent profile-endpoint requests produce no 5xx errors")
+        void shouldHandleConcurrentProfileRequests_WithoutServerErrors() throws Exception {
+            int userCount = 10;
+            User[] users = new User[userCount];
+            String[] tokens = new String[userCount];
+            for (int i = 0; i < userCount; i++) {
+                users[i] = createUser("concurrent" + i + "@test.com", "concurrent" + i);
+                tokens[i] = tokenFor(users[i]);
+            }
+
+            ExecutorService pool = Executors.newFixedThreadPool(userCount);
+            List<CompletableFuture<Integer>> futures = new ArrayList<>();
+
+            // 70 concurrent GET /api/v1/users/me — each user reads their own profile
+            for (int i = 0; i < 70; i++) {
+                final String token = tokens[i % userCount];
+                futures.add(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return mockMvc.perform(get("/api/v1/users/me")
+                                        .header("Authorization", "Bearer " + token))
+                                .andReturn().getResponse().getStatus();
+                    } catch (Exception e) { return 500; }
+                }, pool));
+            }
+
+            // 70 concurrent PATCH /api/v1/users/me — all-null no-op; each user patches only their own profile
+            for (int i = 0; i < 70; i++) {
+                final String token = tokens[i % userCount];
+                futures.add(CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return mockMvc.perform(patch("/api/v1/users/me")
+                                        .header("Authorization", "Bearer " + token)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("{\"name\":null,\"email\":null}"))
+                                .andReturn().getResponse().getStatus();
+                    } catch (Exception e) { return 500; }
+                }, pool));
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            pool.shutdown();
+
+            List<Integer> statuses = futures.stream().map(f -> f.getNow(-1)).toList();
+            assertThat(statuses).doesNotContain(500);
+            assertThat(statuses.subList(0, 70)).allMatch(s -> s == 200);
+            assertThat(statuses.subList(70, 140)).allMatch(s -> s == 204);
         }
     }
 }
