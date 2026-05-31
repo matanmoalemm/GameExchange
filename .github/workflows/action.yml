@@ -54,13 +54,13 @@ jobs:
           context: .
           dockerfile: Dockerfile
           push: false
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gamexchange:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/gamexchange:latest
 
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
@@ -70,4 +70,4 @@ jobs:
           context: .
           dockerfile: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gamexchange:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/gamexchange:latest
