@@ -49,7 +49,7 @@ jobs:
           ./mvnw -B package --file pom.xml -DskipTests
 
       - name: Build Docker Image
-        uses: actions/build-push-action@v2
+        uses: docker/build-push-action@v2
         with:
           context: .
           dockerfile: Dockerfile
@@ -65,7 +65,7 @@ jobs:
 
 
       - name: Push Docker Image
-        uses: actions/build-push-action@v2
+        uses: docker/build-push-action@v2
         with:
           context: .
           dockerfile: Dockerfile
