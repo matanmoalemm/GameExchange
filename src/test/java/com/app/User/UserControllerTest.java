@@ -118,7 +118,7 @@ class UserControllerTest {
         @Test
         @DisplayName("should return 200 with list of authenticated user's posts")
         void shouldReturn200WithPostList() throws Exception {
-            PostResponse post = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now());
+            PostResponse post = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now(), null);
             when(userService.getUserPostsById(1L)).thenReturn(List.of(post));
 
             mockMvc.perform(get("/api/v1/users/me/posts"))
@@ -345,7 +345,7 @@ class UserControllerTest {
         @Test
         @DisplayName("should return 200 with user's posts when valid ID is provided")
         void shouldReturn200WithPostList_WhenValidId() throws Exception {
-            PostResponse post = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 2L, "ACTIVE", LocalDateTime.now());
+            PostResponse post = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 2L, "ACTIVE", LocalDateTime.now(), null);
             when(userService.getUserPostsById(2L)).thenReturn(List.of(post));
 
             mockMvc.perform(get("/api/v1/users/2/posts"))

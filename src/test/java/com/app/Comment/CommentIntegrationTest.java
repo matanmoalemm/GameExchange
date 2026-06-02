@@ -167,7 +167,7 @@ class CommentIntegrationTest extends BaseIntegrationTest {
             User owner = createUser("owner@test.com", "owner");
             User intruder = createUser("intruder@test.com", "intruder");
             Post post = createPost(owner, "Original Title", 50);
-            com.app.Post.PostUpdateDto dto = new com.app.Post.PostUpdateDto("New Title", null, null, null, null);
+            com.app.Post.PostUpdateDto dto = new com.app.Post.PostUpdateDto("New Title", null, null, null, null, null);
 
             mockMvc.perform(withToken(patch("/api/v1/posts/" + post.getId())
                             .contentType(MediaType.APPLICATION_JSON)

@@ -203,7 +203,7 @@ class UserServiceTest {
             User user = new User();
             Post post = new Post();
             user.setPosts(List.of(post));
-            PostResponse postResponse = new PostResponse(1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now());
+            PostResponse postResponse = new PostResponse(1L, "Item", "Desc", 10, "url", 1L, "ACTIVE", LocalDateTime.now(), null);
 
             when(userLookupService.getById(1L)).thenReturn(user);
             when(userMapper.toPostResponses(user.getPosts())).thenReturn(List.of(postResponse));
