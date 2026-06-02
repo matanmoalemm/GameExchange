@@ -294,7 +294,7 @@ class PostServiceTest {
             owner.setId(1L);
             Post post = new Post();
             post.setUser(owner);
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE", null);
 
             when(postLookUpService.getPostById(1L)).thenReturn(post);
 
@@ -307,7 +307,7 @@ class PostServiceTest {
         @DisplayName("should throw NoSuchElementException when post is not found")
         void shouldThrow_WhenPostNotFound() {
             when(postLookUpService.getPostById(1L)).thenThrow(new NoSuchElementException("Post not found"));
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE", null);
 
             assertThrows(NoSuchElementException.class, () -> postService.updatePostFromDto(1L, dto, 1L));
             verify(postMapper, never()).updatePostFromDto(any(), any());
@@ -320,7 +320,7 @@ class PostServiceTest {
             owner.setId(2L);
             Post post = new Post();
             post.setUser(owner);
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE", null);
 
             when(postLookUpService.getPostById(1L)).thenReturn(post);
 
@@ -332,7 +332,7 @@ class PostServiceTest {
         @DisplayName("should throw NoSuchElementException when ID is null")
         void shouldThrow_WhenIdIsNull() {
             when(postLookUpService.getPostById(null)).thenThrow(new NoSuchElementException("Post not found"));
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 10, "http://url.com/img.jpg", "ACTIVE", null);
 
             assertThrows(NoSuchElementException.class, () -> postService.updatePostFromDto(null, dto, 1L));
         }
@@ -344,7 +344,7 @@ class PostServiceTest {
             owner.setId(1L);
             Post post = new Post();
             post.setUser(owner);
-            PostUpdateDto dto = new PostUpdateDto(null, null, null, null, null);
+            PostUpdateDto dto = new PostUpdateDto(null, null, null, null, null, null);
 
             when(postLookUpService.getPostById(1L)).thenReturn(post);
 

@@ -141,7 +141,7 @@ class PostIntegrationTest extends BaseIntegrationTest {
         void shouldKeepOtherFields_WhenOnlyPricePatched() throws Exception {
             User owner = createUser("owner@test.com", "owner");
             Post post = createPost(owner, "Original Title", 50);
-            PostUpdateDto dto = new PostUpdateDto(null, null, 30, null, null);
+            PostUpdateDto dto = new PostUpdateDto(null, null, 30, null, null, null);
 
             mockMvc.perform(withToken(patch("/api/v1/posts/" + post.getId())
                             .contentType(MediaType.APPLICATION_JSON)
@@ -160,7 +160,7 @@ class PostIntegrationTest extends BaseIntegrationTest {
         void shouldBeNoOp_WhenAllFieldsNull() throws Exception {
             User owner = createUser("owner@test.com", "owner");
             Post post = createPost(owner, "Original Title", 50);
-            PostUpdateDto dto = new PostUpdateDto(null, null, null, null, null);
+            PostUpdateDto dto = new PostUpdateDto(null, null, null, null, null, null);
 
             mockMvc.perform(withToken(patch("/api/v1/posts/" + post.getId())
                             .contentType(MediaType.APPLICATION_JSON)

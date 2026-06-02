@@ -89,7 +89,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 200 with list of posts")
         void shouldReturn200WithListOfPosts() throws Exception {
-            PostResponse response = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now());
+            PostResponse response = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now(), null);
             when(postService.getPosts()).thenReturn(List.of(response));
 
             mockMvc.perform(get("/api/v1/posts"))
@@ -126,7 +126,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 200 with post when valid ID is provided")
         void shouldReturn200WithPost_WhenValidId() throws Exception {
-            PostResponse response = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now());
+            PostResponse response = new PostResponse(1L, "Game", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now(), null);
             when(postService.getPostResponseById(1L)).thenReturn(response);
 
             mockMvc.perform(get("/api/v1/posts/1"))
@@ -170,7 +170,7 @@ class PostControllerTest {
         @DisplayName("should return 201 with created post when request is valid")
         void shouldReturn201WithCreatedPost_WhenValid() throws Exception {
             PostRequest request = new PostRequest("Game", 50, "http://img.com/img.jpg", "desc");
-            PostResponse response = new PostResponse(1L, "Game", "desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now());
+            PostResponse response = new PostResponse(1L, "Game", "desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now(), null);
             when(postService.insertPost(any(), any())).thenReturn(response);
 
             mockMvc.perform(post("/api/v1/posts")
@@ -324,7 +324,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 204 when update is valid")
         void shouldReturn204_WhenValidUpdate() throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("New Name", "New Desc", 100, "http://img.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("New Name", "New Desc", 100, "http://img.com/img.jpg", "ACTIVE", null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -348,7 +348,7 @@ class PostControllerTest {
         @MethodSource("com.app.Post.PostControllerTest#invalidUpdateProductNames")
         @DisplayName("should return 400 when productName violates @Size constraint")
         void shouldReturn400_WhenProductNameViolatesSize(String productName) throws Exception {
-            PostUpdateDto dto = new PostUpdateDto(productName, "Desc", 100, "http://img.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto(productName, "Desc", 100, "http://img.com/img.jpg", "ACTIVE", null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -362,7 +362,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 400 when price is negative")
         void shouldReturn400_WhenPriceIsNegative() throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", -1, "http://img.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", -1, "http://img.com/img.jpg", "ACTIVE", null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -378,7 +378,7 @@ class PostControllerTest {
         @ValueSource(strings = {"not-a-url", "www.example.com", "", "htp://example.com"})
         @DisplayName("should return 400 when picUrl does not match URL pattern")
         void shouldReturn400_WhenPicUrlViolatesPattern(String picUrl) throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, picUrl, "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, picUrl, "ACTIVE", null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -393,7 +393,7 @@ class PostControllerTest {
         @ValueSource(strings = {"INVALID", "active", "PENDING_STATUS", "sold"})
         @DisplayName("should return 400 when status is not a valid enum value")
         void shouldReturn400_WhenStatusIsInvalid(String status) throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, "http://img.com/img.jpg", status);
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, "http://img.com/img.jpg", status, null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -407,7 +407,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 400 when description exceeds 1000 characters")
         void shouldReturn400_WhenDescriptionTooLong() throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("Name", "a".repeat(1001), 100, "http://img.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "a".repeat(1001), 100, "http://img.com/img.jpg", "ACTIVE", null);
 
             mockMvc.perform(patch("/api/v1/posts/1")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -419,7 +419,7 @@ class PostControllerTest {
         @Test
         @DisplayName("should return 404 when post is not found")
         void shouldReturn404_WhenPostNotFound() throws Exception {
-            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, "http://img.com/img.jpg", "ACTIVE");
+            PostUpdateDto dto = new PostUpdateDto("Name", "Desc", 100, "http://img.com/img.jpg", "ACTIVE", null);
             doThrow(new NoSuchElementException("Post not found"))
                     .when(postService).updatePostFromDto(eq(99L), any(), eq(1L));
 
