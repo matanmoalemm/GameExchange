@@ -38,9 +38,9 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-#      #Testing
-#      - name: Tests
-#        run: ./mvnw clean test --file pom.xml
+      #Testing
+      - name: Tests
+        run: ./mvnw clean test --file pom.xml
 
       #Build JAR File
       - name: Build JAR File
