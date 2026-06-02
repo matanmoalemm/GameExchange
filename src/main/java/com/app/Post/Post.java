@@ -43,7 +43,7 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
     private List<Comment> comments = new ArrayList<>();
 
-
+    private Integer soldValue;
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

@@ -35,3 +35,6 @@ build/
 ### Secrets ###
 client_secret_*.json
 src/main/resources/application-local.properties
+
+.vercel
+.env*.local

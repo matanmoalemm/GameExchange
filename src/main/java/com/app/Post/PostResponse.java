@@ -8,6 +8,7 @@ public record PostResponse(
         String picUrl,
         Long userId,
         String status,
-        java.time.LocalDateTime createdAt
+        java.time.LocalDateTime createdAt,
+        Integer soldPrice
 ) {
 }

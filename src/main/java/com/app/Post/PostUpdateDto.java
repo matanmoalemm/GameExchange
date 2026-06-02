@@ -19,6 +19,8 @@ public record PostUpdateDto(
 
         @Pattern(regexp = "ACTIVE|PENDING|SOLD|DELETED",
                 message = "Invalid status. Must be ACTIVE, PENDING, SOLD, or DELETED")
-        String status
+        String status,
+        @PositiveOrZero
+        Integer soldPrice
 ) {
 }

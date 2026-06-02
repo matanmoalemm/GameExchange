@@ -1,25 +1,8 @@
-User Intent: Refactor and expand the Integration Test suite for all entity classes in the project.
+I want to add a new feature for my app.
+The feature is when a post is marked as sold, a window will pop and be asking what is the selling price.
 
-Please update the integration tests :
-["src/test/java/com/app/User/UserIntegrationTest.java","src/test/java/com/app/Post/PostIntegrationTest.java", "src/test/java/com/app/Comment/CommentIntegrationTest.java" ]
-for each entity according to the following technical requirements and scenarios:
+I have added to the backend code a variable called soldValue, it is also added to the postUpdateDto and to postResponse.
 
-### 1. High-Performance & Concurrency Scenarios
-Implement high-throughput integration tests to verify system stability, data consistency, and performance under load.
-* **Requirements:** Create a test scenario that executes a batch of 1,000 concurrent or rapid sequential HTTP requests.
-* **Coverage:** This batch must mix different HTTP methods from all entities (GET, POST, PUT, DELETE, PATCH) to simulate realistic multi-user behavior.
-* **Assertions:** Ensure the system handles the volume without throwing 5xx errors, leaking memory, or causing database deadlocks. Verify that final data states are correct.
+I want Active post to look the same, that it will not show the soldPrice, only when the item is marked as Sold.
 
-### 2. Partial Update (PATCH) Scenarios
-Implement targeted tests for the `PATCH` endpoint of each entity to ensure partial updates behave strictly according to delta-update logic.
-* **Scenario A: Single Non-Null Argument**
-    * **Action:** Send a PATCH request containing exactly *one* valid, non-null field while omitting all other fields.
-    * **Assertion:** Verify that only the specified field is updated in the database, and all other entity fields remain unchanged.
-* **Scenario B: All Null Arguments**
-    * **Action:** Send a PATCH request where all payload fields are explicitly set to `null` (or an empty JSON body `{}`).
-    * **Assertion:** Verify that the operation results in a "no-op" (no database update occurs). Assert that the entity's `updatedAt` timestamp (if applicable) is not modified and a successful status code (e.g., 200 OK or 204 No Content) is returned.
 
-### 3. General Implementation Guidelines
-* **Isolation:** Ensure tests use a clean database state per run (e.g., using transactions that roll back or a test containers approach).
-* **Mocking:** Only mock external third-party APIs. The database and internal service layers must be fully integrated.
-* **Framework:** Write the tests using the project's existing testing stack.
