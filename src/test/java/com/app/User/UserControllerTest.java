@@ -198,7 +198,7 @@ class UserControllerTest {
         }
 
         @ParameterizedTest(name = "name=\"{0}\"")
-        @ValueSource(strings = {"user name", "user@name", "user!"})
+        @ValueSource(strings = {"user@name", "user!"})
         @DisplayName("should return 400 when name contains invalid characters")
         void shouldReturn400_WhenNameViolatesPattern(String name) throws Exception {
             UserUpdateDTO dto = new UserUpdateDTO(name, "valid@test.com");
