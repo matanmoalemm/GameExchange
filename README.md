@@ -29,7 +29,7 @@ Game Exchange is a community-driven marketplace for gamers. Users sign in with t
 - **Comment** on posts to ask questions or negotiate deals
 - **Manage** their own profile and listings
 
-The backend exposes a REST API consumed by a React frontend running on `localhost:3000`.
+The backend exposes a REST API consumed by a React frontend.
 
 ---
 

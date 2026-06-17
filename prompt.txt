@@ -1,8 +1,0 @@
-I want to add a new feature for my app.
-The feature is when a post is marked as sold, a window will pop and be asking what is the selling price.
-
-I have added to the backend code a variable called soldValue, it is also added to the postUpdateDto and to postResponse.
-
-I want Active post to look the same, that it will not show the soldPrice, only when the item is marked as Sold.
-
-
