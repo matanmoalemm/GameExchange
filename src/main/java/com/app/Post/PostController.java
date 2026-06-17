@@ -23,6 +23,12 @@ public class PostController {
 
         return postService.getPosts();
     }
+
+    @GetMapping("/search")
+    @ResponseStatus(HttpStatus.OK)
+    public List<PostResponse> searchPostsByName(@RequestParam("name") String name) {
+        return postService.searchPostsByName(name);
+    }
     @GetMapping("{id}")
     @ResponseStatus(HttpStatus.OK)
     public PostResponse getPostById(@PathVariable Long id){

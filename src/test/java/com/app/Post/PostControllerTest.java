@@ -120,6 +120,44 @@ class PostControllerTest {
     }
 
     @Nested
+    @DisplayName("searchPostsByName — GET /api/v1/posts/search")
+    class SearchPostsByName {
+
+        @Test
+        @DisplayName("should return 200 with list of matching posts")
+        void shouldReturn200WithMatchingPosts() throws Exception {
+            String query = "Witcher";
+            PostResponse response = new PostResponse(1L, "The Witcher 3", "Desc", 50, "http://img.com/img.jpg", 1L, "ACTIVE", LocalDateTime.now(), null);
+            when(postService.searchPostsByName(query)).thenReturn(List.of(response));
+
+            mockMvc.perform(get("/api/v1/posts/search")
+                            .param("name", query))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].productName").value("The Witcher 3"));
+        }
+
+        @Test
+        @DisplayName("should return 200 with empty list when no matches")
+        void shouldReturn200WithEmptyList() throws Exception {
+            String query = "NonExistent";
+            when(postService.searchPostsByName(query)).thenReturn(List.of());
+
+            mockMvc.perform(get("/api/v1/posts/search")
+                            .param("name", query))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(0));
+        }
+
+        @Test
+        @DisplayName("should return 400 when name parameter is missing")
+        void shouldReturn400WhenNameMissing() throws Exception {
+            mockMvc.perform(get("/api/v1/posts/search"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
     @DisplayName("getPostById — GET /api/v1/posts/{id}")
     class GetPostById {
 

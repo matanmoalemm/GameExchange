@@ -83,6 +83,7 @@ Mutating endpoints (update / delete) compare the authenticated user's ID against
 | Method | Path | Auth   | Owner | Description |
 |---|---|--------|---|---|
 | `GET` | `/api/v1/posts` | Public | — | List all posts |
+| `GET` | `/api/v1/posts/search` | Public | — | Search for posts by product name (query param: `name`) |
 | `GET` | `/api/v1/posts/{id}` | Public | — | Get a single post |
 | `POST` | `/api/v1/posts` | Auth   | — | Create a new post (assigned to the authenticated user) |
 | `PATCH` | `/api/v1/posts/{id}` | Auth   | Owner | Update your post (partial update) |

@@ -86,6 +86,41 @@ class PostServiceTest {
     }
 
     @Nested
+    @DisplayName("searchPostsByName")
+    class SearchPostsByName {
+
+        @Test
+        @DisplayName("should return matching posts as mapped responses")
+        void shouldReturnMatchingPosts() {
+            String query = "Witcher";
+            Post post = new Post();
+            PostResponse response = mock(PostResponse.class);
+
+            when(postRepository.findByProductNameContainingIgnoreCase(query)).thenReturn(List.of(post));
+            when(postMapper.toResponse(post)).thenReturn(response);
+
+            List<PostResponse> result = postService.searchPostsByName(query);
+
+            assertEquals(1, result.size());
+            assertSame(response, result.get(0));
+            verify(postRepository).findByProductNameContainingIgnoreCase(query);
+            verify(postMapper).toResponse(post);
+        }
+
+        @Test
+        @DisplayName("should return empty list when no posts match")
+        void shouldReturnEmptyList_WhenNoMatches() {
+            String query = "NonExistent";
+            when(postRepository.findByProductNameContainingIgnoreCase(query)).thenReturn(Collections.emptyList());
+
+            List<PostResponse> result = postService.searchPostsByName(query);
+
+            assertTrue(result.isEmpty());
+            verify(postMapper, never()).toResponse(any());
+        }
+    }
+
+    @Nested
     @DisplayName("getPostById")
     class GetPostById {
 

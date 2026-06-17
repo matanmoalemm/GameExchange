@@ -63,6 +63,46 @@ class PostIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
+    @DisplayName("Search Posts")
+    class SearchPosts {
+
+        @Test
+        @DisplayName("GET /api/v1/posts/search?name=witcher — returns only matching posts")
+        void shouldReturnMatchingPosts() throws Exception {
+            User user = createUser("owner@test.com", "owner");
+            PostRequest request1 = new PostRequest("The Witcher 3", 50, "http://example.com/witcher.jpg", "rpg");
+            PostRequest request2 = new PostRequest("FIFA 23", 60, "http://example.com/fifa.jpg", "sports");
+
+            // Insert posts
+            mockMvc.perform(withToken(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request1)), user))
+                    .andExpect(status().isCreated());
+
+            mockMvc.perform(withToken(post("/api/v1/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request2)), user))
+                    .andExpect(status().isCreated());
+
+            // Search
+            mockMvc.perform(get("/api/v1/posts/search")
+                            .param("name", "witcher"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].productName").value("The Witcher 3"));
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/posts/search?name=nonexistent — returns empty list")
+        void shouldReturnEmptyListWhenNoMatches() throws Exception {
+            mockMvc.perform(get("/api/v1/posts/search")
+                            .param("name", "nonexistent"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(0));
+        }
+    }
+
+    @Nested
     @DisplayName("Database State")
     class DatabaseState {
 

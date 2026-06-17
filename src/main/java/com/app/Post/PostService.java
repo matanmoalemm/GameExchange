@@ -30,6 +30,12 @@ public class PostService {
                 .toList();
     }
 
+    public List<PostResponse> searchPostsByName(String name) {
+        return postRepository.findByProductNameContainingIgnoreCase(name).stream()
+                .map(postMapper::toResponse)
+                .toList();
+    }
+
     public Post getPostById(Long id) {
         return postLookUpService.getPostById(id);
     }
